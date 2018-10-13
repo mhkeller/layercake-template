@@ -1,0 +1,47 @@
+{#each points as point, i}
+	<path class="voronoi-cell" d={voronoi.renderCell(i)} on:mouseover="log(event, point)"></path>
+{/each}
+
+<style>
+	.voronoi-cell {
+		fill: none;
+		stroke: none;
+		pointer-events: all;
+	}
+
+	.voronoi-cell:hover {
+		stroke: #000;
+	}
+</style>
+
+<script>
+import { Delaunay } from 'd3-delaunay';
+import * as _ from 'underscore';
+
+export default {
+	namespace: 'svg',
+	computed: {
+		points: ({ $data, $xGet, $yGet }) => {
+			const points = _.chain($data)
+				.map(d => {
+					const point = [$xGet(d), $yGet(d)];
+					point.data = d;
+					return point;
+				})
+				.uniq(d => d.join(''))
+				.value();
+			return points;
+		},
+		voronoi: ({ $width, $height, $padding, points }) => {
+			const delaunay = Delaunay.from(points);
+			const voronoi = delaunay.voronoi([0, 0, $width, $height]);
+			return voronoi;
+		}
+	},
+	methods: {
+		log (e, point) {
+			console.log(point, point.data);
+		}
+	}
+};
+</script>

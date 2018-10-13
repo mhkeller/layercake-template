@@ -1,0 +1,33 @@
+<script>
+import { scaleCanvas } from 'LayerCake';
+export default {
+	/* --------------------------------------------
+	 * Put our canvas drawing functions inside of onstate
+	 * which will change on first load and whenever
+	 * the store update fires
+	 */
+	onstate () {
+		const { canvas, ctx, opts } = this.get();
+		const { width, height, xGet, yGet, data, custom } = this.store.get();
+
+		/* --------------------------------------------
+		 * If you were to have multiple canvas layers
+		 * maybe for some artistic layering purposes
+		 * put these reset functions in the first layer, not each one
+		 * since they should only run once per update
+		 */
+		scaleCanvas(canvas, ctx, width, height);
+		ctx.clearRect(0, 0, width, height);
+
+		/* --------------------------------------------
+		 * Draw our scatterplot
+		 */
+		data.forEach(d => {
+			ctx.beginPath();
+			ctx.arc(xGet(d), yGet(d), custom.r, 0, 2 * Math.PI, false);
+			ctx.fillStyle = opts.color;
+			ctx.fill();
+		});
+	}
+};
+</script>

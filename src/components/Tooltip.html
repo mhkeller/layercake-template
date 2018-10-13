@@ -1,0 +1,97 @@
+<div ref:bg on:mousemove="mousemove(event)" on:mouseout="mouseout()">
+</div>
+<div ref:tooltip>{@html contents}</div>
+
+<style>
+	ref:bg,
+	ref:tooltip {
+		position: absolute;
+	}
+
+	ref:bg {
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+	}
+
+	ref:tooltip {
+		font-size: 13px;
+		pointer-events: none;
+		width: 150px;
+		border: 1px solid #ccc;
+		background: #fff;
+		transform: translate(-50%, -100%);
+		display: none;
+		padding: 5px;
+	}
+</style>
+
+<script>
+import { quadtree } from 'd3-quadtree';
+const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function capitalize (str) {
+	return str.charAt(0).toUpperCase() + str.slice(1, str.length);
+}
+
+function addCommas (num) {
+	const parts = String(num).split('.');
+	parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+	return parts.join('.');
+}
+
+export default {
+	data () {
+		return {
+			contents: ''
+		};
+	},
+	computed: {
+		finder: ({ $custom, $xGet, $width, $height }) => {
+			return quadtree()
+				.extent([[-1, -1], [$width + 1, $height + 1]])
+				.x($xGet)
+				.y($xGet)
+				.addAll($custom.fruit);
+		}
+	},
+	methods: {
+		mousemove (e) {
+			const el = this.refs.tooltip;
+			const { finder } = this.get();
+			const found = finder.find(e.layerX, e.layerX, 300);
+
+			if (found) {
+				this.setContents(found);
+				el.style.left = `${e.layerX}px`;
+				el.style.top = `${e.layerY - 5}px`;
+				el.style.display = 'block';
+			} else {
+				el.style.display = 'none';
+			}
+		},
+
+		mouseout () {
+			this.refs.tooltip.style.display = 'none';
+		},
+
+		setContents (result) {
+			const rows = Object.keys(result).filter(d => d !== 'month').map(key => {
+				return {
+					key,
+					value: result[key]
+				};
+			}).sort((a, b) => b.value - a.value);
+
+			const contents = `
+				<div style="font-weight: bold;">${monthNames[result.month.getMonth()]} ${result.month.getDate()}</div>
+				${rows.map(row => `<div><span style="color: #999; width: 65px;display:inline-block;">${capitalize(row.key)}:</span> ${addCommas(row.value)}</div>`).join('')}
+			`;
+
+			this.store.set({ highest: rows[0].key });
+			this.set({ contents });
+		}
+	}
+};
+</script>

@@ -1,0 +1,29 @@
+{#each $data as d, i}
+	<rect class='group-rect' data-id="{i}" x="{$xScale.range()[0]}" y="{y(d)}" {height} width="{width(d)}"></rect>
+{/each}
+<style>
+	.group-rect {
+		fill: #00bbff;
+	}
+</style>
+
+<script>
+export default {
+	namespace: 'svg',
+	computed: {
+		y: ({ $yGet }) => {
+			return (d) => {
+				return $yGet(d);
+			};
+		},
+		height: ({ $yScale }) => {
+			return $yScale.bandwidth();
+		},
+		width: ({ $xGet }) => {
+			return (d) => {
+				return $xGet(d);
+			};
+		}
+	}
+};
+</script>

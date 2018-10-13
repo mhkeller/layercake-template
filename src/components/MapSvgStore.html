@@ -1,0 +1,34 @@
+{#each features as feature}
+	<path class="feature-path" fill="{fillRandom(Math.random())}" d="{geoPath(feature)}"></path>
+{/each}
+
+<style>
+	.feature-path {
+		stroke: #333;
+		stroke-width: 0.5px;
+	}
+</style>
+
+<script>
+import { geoPath as d3GeoPath } from 'd3-geo';
+
+export default {
+	namespace: 'svg',
+	computed: {
+		geoPath: ({ $projection }) => {
+			return d3GeoPath($projection);
+		},
+		features: ({ $data }) => {
+			// Just show ten states in this example
+			return $data.features.slice(40, 50);
+		}
+	},
+	helpers: {
+		fillRandom: (random) => {
+			const colors = ['#ffdecc', '#ffc09c', '#ffa06b', '#ff7a33'];
+			const index = Math.round(random * (colors.length - 1));
+			return colors[index];
+		}
+	}
+};
+</script>

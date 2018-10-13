@@ -1,0 +1,35 @@
+{#each $data.features as feature}
+	<path class="feature-path" fill="{fillRandom(Math.random())}" d="{geoPath(feature)}"></path>
+{/each}
+
+<style>
+	.feature-path {
+		stroke: #333;
+		stroke-width: 0.5px;
+	}
+</style>
+
+<script>
+import * as geo from 'd3-geo';
+
+export default {
+	namespace: 'svg',
+	computed: {
+		projection: ({ $width, $height, $data, $custom }) => {
+			return geo[$custom.projection]()
+				.fitSize([$width, $height], $data);
+		},
+		geoPath: ({ projection }) => {
+			return geo.geoPath(projection);
+		}
+	},
+	helpers: {
+		fillRandom: (random) => {
+			const colors = ['#ffdecc', '#ffc09c', '#ffa06b', '#ff7a33'];
+
+			var index = Math.round(random * (colors.length - 1));
+			return colors[index];
+		}
+	}
+};
+</script>

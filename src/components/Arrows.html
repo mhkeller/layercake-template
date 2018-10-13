@@ -1,0 +1,86 @@
+{#if opts.annotations}
+	<g class="swoops">
+		{#each opts.annotations as anno, i}
+			{#if anno.arrows}
+				{#each anno.arrows as arrow}
+					<path marker-end='url(#arrowhead)' d='{d(anno, i, arrow)}'></path>
+				{/each}
+			{/if}
+		{/each}
+	</g>
+{/if}
+
+<style>
+	.swoops {
+		position: absolute;
+		max-width: 200px;
+		line-height: 14px;
+	}
+	.swoops path {
+		fill: none;
+		stroke: #000;
+		stroke-width: 1;
+	}
+</style>
+
+<script>
+import swoopyArrow from '../modules/swoopyArrow.js';
+import getElPosition from '../modules/getElPosition.js';
+import parseCssValue from '../modules/parseCssValue.js';
+
+/* --------------------------------------------
+ * Some lookups to convert between x, y / width, height terminology
+ * and CSS names
+ */
+const lookups = [
+	{ dimension: 'width', css: 'left', position: 'x' },
+	{ dimension: 'height', css: 'top', position: 'y' }
+];
+
+export default {
+	namespace: 'svg',
+	computed: {
+		d: ({ $width, $height, opts, $annotationEls }) => {
+			return (anno, i, arrow) => {
+				if ($annotationEls) {
+					const el = $annotationEls[i];
+					// const el = document.querySelector(`.layercake-annotation[data-id="${i}"]`);
+					/* --------------------------------------------
+					 * Parse our attachment directives to know where to start the arrowhead
+					 * measuring a bounding box based on our annotation el
+					 */
+					const arrowSource = getElPosition(el);
+					const sourceCoords = arrow.source.anchor.split('-').map((d, i) => {
+						const point = d === 'middle' ? arrowSource[lookups[i].css] + (arrowSource[lookups[i].dimension] / 2) : arrowSource[d];
+						return point + (parseCssValue(arrow.source[`d${lookups[i].position}`], i, arrowSource.width, arrowSource.height));
+					});
+
+					/* --------------------------------------------
+					 * Default to clockwise
+					 */
+					const clockwise = typeof arrow.clockwise === 'undefined' ? true : arrow.clockwise;
+
+					/* --------------------------------------------
+					 * Parse where we're drawing to
+					 */
+					const targetCoords = [arrow.target.x, arrow.target.y].map((d, i) => {
+						return parseCssValue(d, i, $width, $height);
+					});
+
+					/* --------------------------------------------
+					 * Create arrow path
+					 */
+					const d = swoopyArrow()
+						.angle(Math.PI / 2)
+						.clockwise(clockwise)
+						.x(d => d[0])
+						.y(d => d[1])([sourceCoords, targetCoords]);
+
+					return d;
+				}
+				return '';
+			};
+		}
+	}
+};
+</script>

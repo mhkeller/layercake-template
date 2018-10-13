@@ -1,0 +1,43 @@
+{#each $data as series}
+	{#each series as d}
+		<rect class='group-rect' data-id="{i}" x="{x(d)[0]}" y="{y(d)}" {height} width="{width(d)}"fill={fill(series.key)}></rect>
+	{/each}
+	}
+{/each}
+
+<script>
+import { scaleOrdinal } from 'd3-scale';
+
+export default {
+	namespace: 'svg',
+	computed: {
+		colorScale: ({ $xScale, $custom, $data, opts }) => {
+			return scaleOrdinal()
+				.domain($custom.seriesNames)
+				.range(opts.colors);
+		},
+		fill: ({ colorScale, $custom }) => {
+			return seriesName => colorScale(seriesName);
+		},
+		x: ({ $xGet }) => {
+			return (d) => {
+				return $xGet(d);
+			};
+		},
+		y: ({ $yGet }) => {
+			return (d) => {
+				return $yGet(d);
+			};
+		},
+		height: ({ $yScale }) => {
+			return $yScale.bandwidth();
+		},
+		width: ({ x }) => {
+			return (d) => {
+				const vals = x(d);
+				return vals[1] - vals[0];
+			};
+		}
+	}
+};
+</script>

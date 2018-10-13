@@ -1,0 +1,39 @@
+{#each $data as group}
+	<div class="label" style="top:{top(group.values)}px;left:{left(group.values)}px;">{pretty(group.key)}</div>
+{/each}
+
+<style>
+	.label {
+		position: absolute;
+		transform: translate(-100%, -100%)translateY(1px);
+		font-size: 13px;
+	}
+</style>
+
+<script>
+import * as _ from 'underscore';
+
+export default {
+	computed: {
+		left: ({ $xGet, $x }) => {
+			return (values) => {
+				// Don't assume this is sorted
+				const max = _.max(values, d => $x(d));
+				return $xGet(max);
+			};
+		},
+		top: ({ $yGet, $x }) => {
+			return (values) => {
+				// Don't assume this is sorted
+				const max = _.max(values, d => $x(d));
+				return $yGet(max);
+			};
+		}
+	},
+	helpers: {
+		pretty: (val) => {
+			return val.charAt(0).toUpperCase() + val.slice(1, val.length);
+		}
+	}
+};
+</script>

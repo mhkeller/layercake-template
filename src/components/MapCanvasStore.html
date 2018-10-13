@@ -1,0 +1,27 @@
+<script>
+import { scaleCanvas } from 'LayerCake';
+import * as geo from 'd3-geo';
+
+export default {
+	computed: {
+		geoPath: ({ $projection, ctx }) => {
+			return geo.geoPath($projection, ctx);
+		}
+	},
+	onstate () {
+		const { canvas, ctx, geoPath } = this.get();
+		const { width, height, data } = this.store.get();
+		scaleCanvas(canvas, ctx, width, height);
+
+		ctx.clearRect(0, 0, width, height);
+
+		ctx.beginPath();
+		geoPath(data);
+		ctx.fillStyle = '#fff';
+		ctx.fill();
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = '#ccc';
+		ctx.stroke();
+	}
+};
+</script>

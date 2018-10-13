@@ -1,0 +1,35 @@
+{#each opts.annotations as d, i}
+	<div class="layercake-annotation" data-id="{i}" style="{fillStyle(d)}">{d.text}</div>
+{/each}
+
+<style>
+	.layercake-annotation {
+		position: absolute;
+	}
+</style>
+
+<script>
+const vals = ['top', 'right', 'bottom', 'left'];
+export default {
+	onupdate () {
+		/* --------------------------------------------
+		 * Stash this on the store so that our arrow annotation layer can hook onto these DOM elemnts
+		 * only after they're created, and then on update
+		 */
+		this.store.set({ annotationEls: document.querySelectorAll('.layercake-annotation') });
+	},
+	computed: {
+		fillStyle: ({ $width, $height }) => {
+			return d => {
+				let style = '';
+				vals.forEach(val => {
+					if (d[val]) {
+						style += `${val}:${d[val]};`;
+					}
+				});
+				return style;
+			};
+		}
+	}
+};
+</script>

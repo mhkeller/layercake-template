@@ -1,0 +1,44 @@
+{#each sorted as group}
+	<path class='path-line' d='{path(group.values)}' stroke="{stroke(group.key)}"></path>
+{/each}
+<style>
+	.path-line {
+		fill: none;
+		stroke-linejoin: round;
+		stroke-linecap: round;
+		stroke-width: 3px;
+	}
+</style>
+
+<script>
+const colors = {
+	apples: '#ffe4b8',
+	bananas: '#ffb3c0',
+	cherries: '#ff7ac7',
+	dates: '#ff00cc'
+};
+export default {
+	namespace: 'svg',
+	computed: {
+		// Sort the lines by the highest point on hover, as requested by @veltman
+		sorted: ({ $data, $highest }) => {
+			if ($highest) {
+				return $data.filter(d => d.key !== $highest).concat($data.filter(d => d.key === $highest));
+			}
+			return $data;
+		},
+		path: ({ $xGet, $yGet }) => {
+			return values => {
+				return 'M' + values
+					.map(function (d, i) {
+						return $xGet(d) + ',' + $yGet(d);
+					})
+					.join('L');
+			};
+		}
+	},
+	helpers: {
+		stroke: key => colors[key]
+	}
+};
+</script>
