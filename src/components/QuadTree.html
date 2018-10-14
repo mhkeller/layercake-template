@@ -1,0 +1,65 @@
+<div ref:bg on:mousemove="mousemove(event)" on:mouseout="mouseout()"></div>
+<div ref:circle style="top:{$yGet(highlight)}px;left:{$xGet(highlight)}px;display: { visible === true ? 'block' : 'none' };"></div>
+
+<style>
+	ref:bg,
+	ref:circle {
+		position: absolute;
+	}
+
+	ref:bg {
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+	}
+
+	ref:circle {
+		border-radius: 50%;
+		width: 8px;
+		height: 8px;
+		border: 1px solid #000;
+		background-color: #ff4eff;
+		transform: translate(-50%, -50%);
+		pointer-events: none;
+	}
+</style>
+
+<script>
+import { quadtree } from 'd3-quadtree';
+
+export default {
+	data () {
+		return {
+			highlight: {},
+			visible: false
+		};
+	},
+	computed: {
+		finder: ({ $data, $xGet, $yGet, $width, $height }) => {
+			return quadtree()
+				.extent([[-1, -1], [$width + 1, $height + 1]])
+				.x($xGet)
+				.y($yGet)
+				.addAll($data);
+		}
+	},
+	methods: {
+		mousemove (e) {
+			// const el = this.refs.tooltip;
+			const { finder } = this.get();
+			const found = finder.find(e.layerX, e.layerY, 300);
+
+			if (found) {
+				this.set({ visible: true, highlight: found });
+			} else {
+				this.set({ visible: false });
+			}
+		},
+
+		mouseout () {
+			this.set({ visible: false });
+		}
+	}
+};
+</script>

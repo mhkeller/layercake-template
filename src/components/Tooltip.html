@@ -1,6 +1,6 @@
 <div ref:bg on:mousemove="mousemove(event)" on:mouseout="mouseout()">
 </div>
-<div ref:tooltip>{@html contents}</div>
+<div ref:tooltip style="display: { visible ? 'block' : 'none' };top:{top}px;left:{left}px">{@html contents}</div>
 
 <style>
 	ref:bg,
@@ -44,6 +44,9 @@ function addCommas (num) {
 export default {
 	data () {
 		return {
+			top: 0,
+			left: 0,
+			visible: false,
 			contents: ''
 		};
 	},
@@ -58,22 +61,19 @@ export default {
 	},
 	methods: {
 		mousemove (e) {
-			const el = this.refs.tooltip;
 			const { finder } = this.get();
 			const found = finder.find(e.layerX, e.layerX, 300);
 
 			if (found) {
 				this.setContents(found);
-				el.style.left = `${e.layerX}px`;
-				el.style.top = `${e.layerY - 5}px`;
-				el.style.display = 'block';
+				this.set({ visible: true, top: e.layerY - 5, left: e.layerX });
 			} else {
-				el.style.display = 'none';
+				this.set({ visible: false });
 			}
 		},
 
 		mouseout () {
-			this.refs.tooltip.style.display = 'none';
+			this.set({ visible: false });
 		},
 
 		setContents (result) {

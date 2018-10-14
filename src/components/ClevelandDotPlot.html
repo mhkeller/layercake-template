@@ -1,8 +1,8 @@
 {#each $data as row}
 	<g>
-		<line x1="{Math.min(...circleXValues(row))}" y1="{$yGet(row) + midHeight}" x2="{Math.max(...circleXValues(row))}" y2="{$yGet(row) + midHeight}"></line>
+		<line x1="{Math.min(...$xGet(row))}" y1="{$yGet(row) + midHeight}" x2="{Math.max(...$xGet(row))}" y2="{$yGet(row) + midHeight}"></line>
 
-		{#each circleXValues(row) as circleX, i}
+		{#each $xGet(row) as circleX, i}
 			<circle cx="{circleX}" cy="{$yGet(row) + midHeight}" r="5" fill="{colorScale($originalSettings.x[i])}"></circle>
 		{/each}
 	</g>
@@ -27,11 +27,6 @@ export default {
 	computed: {
 		midHeight: ({ $yScale }) => {
 			return $yScale.bandwidth() / 2;
-		},
-		circleXValues: ({ $xGet }) => {
-			return row => {
-				return $xGet(row);
-			};
 		},
 		colorScale: ({ $originalSettings, opts }) => {
 			return scaleOrdinal()

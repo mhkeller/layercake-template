@@ -89,7 +89,7 @@ export default {
 		async download () {
 			this.set({ downloading: true });
 
-			const { main, imports, components, modules, componentModules, slug } = this.get();
+			const { main, htmlExtras, imports, components, modules, componentModules, slug } = this.get();
 			const files = await (await window.fetch('/svelte-app.json')).json();
 			const depsLookup = await (await window.fetch('/deps.json')).json();
 
@@ -117,6 +117,14 @@ export default {
 			files.push({
 				path: `src/main.js`,
 				data: main.contents});
+			if (htmlExtras) {
+				// Add any html extras
+				for (let i = 0; i < files.length; i++) {
+					if (files[i].path === 'public/index.html') {
+						files[i].data = files[i].data.replace('<body>', `<body>\n${htmlExtras}`);
+					}
+				}
+			}
 
 			downloadBlob(doNotZip(files.filter(Boolean)), `layercake-${slug}.zip`);
 

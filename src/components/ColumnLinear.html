@@ -1,5 +1,5 @@
 {#each $data as d, i}
-	<rect class='group-rect' data-id="{i}" x="{x(d)}" y="{y(d)}" width="{width(d)}" height="{height(d)}"
+	<rect class='group-rect' data-id="{i}" x="{x0(d)}" y="{$yGet(d)}" width="{width(d)}" height="{height(d)}"
 	fill="{opts.fill || '#00e047'}" stroke="{opts.stroke || ''}" stroke-width="{opts['stroke-width'] || 0}"></rect>
 {/each}
 
@@ -7,14 +7,9 @@
 export default {
 	namespace: 'svg',
 	computed: {
-		x: ({ $xGet }) => {
+		x0: ({ $xGet }) => {
 			return (d) => {
 				return $xGet(d)[0];
-			};
-		},
-		y: ({ $yGet }) => {
-			return (d) => {
-				return $yGet(d);
 			};
 		},
 		width: ({ $xGet }) => {
@@ -23,9 +18,9 @@ export default {
 				return Math.max(0, (val[1] - val[0]));
 			};
 		},
-		height: ({ $height, $xScale, y }) => {
+		height: ({ $height, $yGet }) => {
 			return (d) => {
-				return $height - y(d);
+				return $height - $yGet(d);
 			};
 		}
 	}

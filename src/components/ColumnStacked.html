@@ -1,6 +1,6 @@
 {#each $data as series, i}
 	{#each series as d}
-		<rect class='group-rect' data-id="{i}" x="{x(d)}" y="{y(d)[1]}" {width} height="{height(d)}"fill={fill(series.key)}></rect>
+		<rect class='group-rect' data-id="{i}" x="{$xGet(d)}" y="{$yGet(d)[1]}" {width} height="{height(d)}"fill={fill(series.key)}></rect>
 	{/each}
 	}
 {/each}
@@ -19,22 +19,12 @@ export default {
 		fill: ({ colorScale, $custom }) => {
 			return seriesName => colorScale(seriesName);
 		},
-		x: ({ $xGet }) => {
-			return (d) => {
-				return $xGet(d);
-			};
-		},
-		y: ({ $yGet }) => {
-			return (d) => {
-				return $yGet(d);
-			};
-		},
 		width: ({ $xScale }) => {
 			return $xScale.bandwidth();
 		},
-		height: ({ $height, $xScale, y }) => {
+		height: ({ $height, $xScale, $yGet }) => {
 			return (d) => {
-				const vals = y(d);
+				const vals = $yGet(d);
 				return vals[0] - vals[1];
 			};
 		}
