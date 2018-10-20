@@ -21,9 +21,9 @@ export default {
 	namespace: 'svg',
 	computed: {
 		// Sort the lines by the highest point on hover, as requested by @veltman
-		sorted: ({ $data, $highest }) => {
-			if ($highest) {
-				return $data.filter(d => d.key !== $highest).concat($data.filter(d => d.key === $highest));
+		sorted: ({ $data, $highest_ }) => {
+			if ($highest_) {
+				return $data.filter(d => d.key !== $highest_).concat($data.filter(d => d.key === $highest_));
 			}
 			return $data;
 		},

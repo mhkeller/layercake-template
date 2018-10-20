@@ -1,11 +1,11 @@
 <script>
-import { scaleCanvas } from 'LayerCake';
+import { scaleCanvas } from 'layercake';
 import * as geo from 'd3-geo';
 
 export default {
 	computed: {
-		geoPath: ({ $projection, ctx }) => {
-			return geo.geoPath($projection, ctx);
+		geoPath: ({ $projection_, ctx }) => {
+			return geo.geoPath($projection_, ctx);
 		}
 	},
 	onstate () {

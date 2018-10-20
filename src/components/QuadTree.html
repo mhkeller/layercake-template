@@ -1,5 +1,5 @@
 <div ref:bg on:mousemove="mousemove(event)" on:mouseout="mouseout()"></div>
-<div ref:circle style="top:{$yGet(highlight)}px;left:{$xGet(highlight)}px;display: { visible === true ? 'block' : 'none' };"></div>
+<div ref:circle style="top:{$yGet(highlight)}px;left:{$xGet(highlight)}px;display: { visible === true ? 'block' : 'none' };background-color:{opts.color};"></div>
 
 <style>
 	ref:bg,
@@ -19,7 +19,6 @@
 		width: 8px;
 		height: 8px;
 		border: 1px solid #000;
-		background-color: #ff4eff;
 		transform: translate(-50%, -50%);
 		pointer-events: none;
 	}

@@ -38,7 +38,7 @@ export default {
 	namespace: 'svg',
 	computed: {
 		ticks: ({ $xScale, opts }) => {
-			return $xScale.ticks(opts.tickNumber);
+			return $xScale.ticks(opts.ticks || opts.tickNumber);
 		},
 		textAnchor: ({ ticks, opts }) => {
 			return function (i) {

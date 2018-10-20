@@ -51,12 +51,12 @@ export default {
 		};
 	},
 	computed: {
-		finder: ({ $custom, $xGet, $width, $height }) => {
+		finder: ({ $xGet, $width, $height, $fruit_ }) => {
 			return quadtree()
 				.extent([[-1, -1], [$width + 1, $height + 1]])
 				.x($xGet)
 				.y($xGet)
-				.addAll($custom.fruit);
+				.addAll($fruit_);
 		}
 	},
 	methods: {
@@ -89,7 +89,7 @@ export default {
 				${rows.map(row => `<div><span style="color: #999; width: 65px;display:inline-block;">${capitalize(row.key)}:</span> ${addCommas(row.value)}</div>`).join('')}
 			`;
 
-			this.store.set({ highest: rows[0].key });
+			this.store.set({ highest_: rows[0].key });
 			this.set({ contents });
 		}
 	}

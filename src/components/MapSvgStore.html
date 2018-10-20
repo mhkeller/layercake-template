@@ -15,8 +15,8 @@ import { geoPath as d3GeoPath } from 'd3-geo';
 export default {
 	namespace: 'svg',
 	computed: {
-		geoPath: ({ $projection }) => {
-			return d3GeoPath($projection);
+		geoPath: ({ $projection_ }) => {
+			return d3GeoPath($projection_);
 		},
 		features: ({ $data }) => {
 			// Just show ten states in this example

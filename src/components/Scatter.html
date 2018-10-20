@@ -1,5 +1,5 @@
 <script>
-import { scaleCanvas } from 'LayerCake';
+import { scaleCanvas } from 'layercake';
 export default {
 	/* --------------------------------------------
 	 * Put our canvas drawing functions inside of onstate
@@ -8,7 +8,7 @@ export default {
 	 */
 	onstate () {
 		const { canvas, ctx, opts } = this.get();
-		const { width, height, xGet, yGet, data, custom } = this.store.get();
+		const { width, height, xGet, yGet, data, r_ } = this.store.get();
 
 		/* --------------------------------------------
 		 * If you were to have multiple canvas layers
@@ -24,7 +24,7 @@ export default {
 		 */
 		data.forEach(d => {
 			ctx.beginPath();
-			ctx.arc(xGet(d), yGet(d), custom.r, 0, 2 * Math.PI, false);
+			ctx.arc(xGet(d), yGet(d), r_, 0, 2 * Math.PI, false);
 			ctx.fillStyle = opts.color;
 			ctx.fill();
 		});

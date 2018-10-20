@@ -11,12 +11,12 @@ import { scaleOrdinal } from 'd3-scale';
 export default {
 	namespace: 'svg',
 	computed: {
-		colorScale: ({ $xScale, $custom, $data, opts }) => {
+		colorScale: ({ $xScale, $seriesNames_, $data, opts }) => {
 			return scaleOrdinal()
-				.domain($custom.seriesNames)
+				.domain($seriesNames_)
 				.range(opts.colors);
 		},
-		fill: ({ colorScale, $custom }) => {
+		fill: ({ colorScale }) => {
 			return seriesName => colorScale(seriesName);
 		},
 		x: ({ $xGet }) => {

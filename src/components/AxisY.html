@@ -1,5 +1,5 @@
 <g class='axis y-axis' transform='translate(-{$padding.left}, 0)'>
-	{#each $yScale.ticks(opts.tickNumber || 5) as tick, i}
+	{#each $yScale.ticks(opts.ticks || opts.tickNumber || 5) as tick, i}
 		<g class='tick tick-{tick}' transform='translate(0, {$yScale(tick)})'>
 			{#if opts.gridlines !== false}
 				<line x2='100%'></line>

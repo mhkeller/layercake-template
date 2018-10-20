@@ -2,7 +2,7 @@
 	{#each $yScale.domain() as tick}
 		<g class='tick tick-{ tick }' transform='translate({$xScale.range()[0]}, {$yScale(tick)})'>
 			{#if opts.gridlines !== false}
-				<line y1='{$width * -1}' y2='0' x1='0' x2='0'></line>
+				<line x2='100%'></line>
 			{/if}
 			<text y='{4 + ($yScale.bandwidth() / 2)}' x="-5">{opts.formatTick ? opts.formatTick(tick) : tick}</text>
 		</g>
