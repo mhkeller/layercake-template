@@ -1,6 +1,7 @@
 import svelte from 'rollup-plugin-svelte';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import dsv from '@rollup/plugin-dsv';
 import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 
@@ -15,6 +16,9 @@ export default {
 		file: 'public/build/bundle.js'
 	},
 	plugins: [
+		// Allow for importing csv files as modules
+		dsv(),
+
 		svelte({
 			// enable run-time checks when not in production
 			dev: !production,
