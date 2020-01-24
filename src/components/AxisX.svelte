@@ -7,8 +7,8 @@
 	export let formatTick = d => d;
 	export let baseline = false;
 	export let snapTicks = false;
-	export let ticks;
-	export let tickNumber;
+	export let ticks = undefined;
+	export let tickNumber = undefined;
 
 	$: tickVals = ticks || $xScale.ticks(tickNumber);
 

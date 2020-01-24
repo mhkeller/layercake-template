@@ -3,7 +3,7 @@
 
 	const { padding, yScale } = getContext('LayerCake');
 
-	export let ticks;
+	export let ticks = undefined;
 	export let tickNumber = 5;
 	export let gridlines = true;
 	export let formatTick = d => d;
