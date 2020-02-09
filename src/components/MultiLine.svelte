@@ -3,12 +3,7 @@
 
 	const { data, xGet, yGet } = getContext('LayerCake');
 
-	const colorLookup = {
-		apples: '#ffe4b8',
-		bananas: '#ffb3c0',
-		cherries: '#ff7ac7',
-		dates: '#ff00cc'
-	};
+	export let colorScale = d => '#000';
 
 	$: path = values => {
 		return 'M' + values
@@ -24,7 +19,7 @@
 		<path
 			class='path-line'
 			d='{path(group.values)}'
-			stroke="{colorLookup[group.key]}"
+			stroke="{colorScale(group.key)}"
 		></path>
 	{/each}
 </g>

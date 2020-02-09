@@ -3,7 +3,7 @@
 
   import QuadTree from './QuadTree.svelte';
 
-  const { width, yScale } = getContext('LayerCake');
+  const { width, yScale, originalSettings } = getContext('LayerCake');
 
   export let dataset;
 
@@ -27,7 +27,7 @@
 
 	function setContents (result) {
     if (Object.keys(result).length === 0) return '';
-    const rows = Object.keys(result).filter(d => d !== 'month').map(key => {
+    const rows = Object.keys(result).filter(d => d !== $originalSettings.x).map(key => {
       return {
         key,
         value: result[key]
@@ -37,7 +37,7 @@
     top = $yScale(rows[0].value) - 20;
 
     return `
-      <div style="font-weight: bold;">${monthNames[result.month.getUTCMonth()]} ${result.month.getUTCDate()}</div>
+      <div style="font-weight: bold;">${monthNames[result[$originalSettings.x].getUTCMonth()]} ${result[$originalSettings.x].getUTCDate()}</div>
       ${rows.map(row => `<div><span style="color: #999; width: 65px;display:inline-block;">${capitalize(row.key)}:</span> ${addCommas(row.value)}</div>`).join('')}`;
   }
 </script>
