@@ -17,7 +17,6 @@ cd my-chart
 Install the dependencies...
 
 ```bash
-cd my-chart
 npm install
 npm start
 ```
@@ -27,6 +26,7 @@ Your app will be running at [localhost:5000](http://localhost:5000).
 ## Developing
 
 ```sh
+# if you didn't already install, run the install command
 npm install
 npm run dev
 ```
