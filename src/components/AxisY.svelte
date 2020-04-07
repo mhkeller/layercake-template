@@ -8,10 +8,11 @@
 	export let gridlines = true;
 	export let formatTick = d => d;
 
+	$: tickVals = ticks || $yScale.ticks(tickNumber);
 </script>
 
 <g class='axis y-axis' transform='translate(-{$padding.left}, 0)'>
-	{#each $yScale.ticks(ticks || tickNumber) as tick, i}
+	{#each tickVals as tick, i}
 		<g class='tick tick-{tick}' transform='translate(0, {$yScale(tick)})'>
 			{#if gridlines !== false}
 				<line x2='100%'></line>
