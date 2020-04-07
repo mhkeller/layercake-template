@@ -8,17 +8,16 @@
 	export let baseline = false;
 	export let snapTicks = false;
 	export let ticks = undefined;
-	export let tickNumber = undefined;
 
-	$: tickVals = ticks || $xScale.ticks(tickNumber);
+	$: tickVals = Array.isArray(ticks) ? ticks : $xScale.ticks(tickNumber);
 
 	function textAnchor(i) {
 		if (snapTicks === true) {
 			if (i === 0) {
-				return 'end';
+				return 'start';
 			}
 			if (i === tickVals.length - 1) {
-				return 'start';
+				return 'end';
 			}
 		}
 		return 'middle';
