@@ -6,6 +6,7 @@
 	export let ticks = undefined;
 	export let gridlines = true;
 	export let formatTick = d => d;
+	export let tickNumber = undefined;
 
 	$: tickVals = Array.isArray(ticks) ? ticks : $yScale.ticks(tickNumber);
 </script>
