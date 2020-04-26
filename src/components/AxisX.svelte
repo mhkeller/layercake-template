@@ -8,6 +8,7 @@
 	export let baseline = false;
 	export let snapTicks = false;
 	export let ticks = undefined;
+	export let tickNumber = undefined;
 
 	$: tickVals = Array.isArray(ticks) ? ticks : $xScale.ticks(tickNumber);
 
