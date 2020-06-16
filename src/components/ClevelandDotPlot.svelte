@@ -2,21 +2,16 @@
 	import { getContext } from 'svelte';
 	import { scaleOrdinal } from 'd3-scale';
 
-	const { data, xGet, yGet, yScale, originalSettings } = getContext('LayerCake');
+	const { data, xGet, yGet, yScale, zScale, config } = getContext('LayerCake');
 
-	export let seriesColors;
+	export let r = 5;
 
 	$: midHeight = $yScale.bandwidth() / 2;
-
-	$: colorScale = scaleOrdinal()
-		.domain($originalSettings.x)
-		.range(seriesColors);
-
 </script>
 
-<g class="dot-group">
+<g class="dot-plot">
 	{#each $data as row}
-		<g>
+		<g class="dot-row">
 			<line
 				x1="{Math.min(...$xGet(row))}"
 				y1="{$yGet(row) + midHeight}"
@@ -28,8 +23,8 @@
 				<circle
 					cx="{circleX}"
 					cy="{$yGet(row) + midHeight}"
-					r="5"
-					fill="{colorScale($originalSettings.x[i])}"
+					r="{r}"
+					fill="{$zScale($config.x[i])}"
 				></circle>
 			{/each}
 		</g>

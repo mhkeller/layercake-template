@@ -2,19 +2,12 @@
 	import { getContext } from 'svelte';
 	import { scaleOrdinal } from 'd3-scale';
 
-	export let seriesColors;
-
-	const { data, xGet, yGet, yScale, custom } = getContext('LayerCake');
+	const { data, xGet, yGet, zGet, yScale, custom } = getContext('LayerCake');
 
 	$: columnWidth = d => {
 		const xVals = $xGet(d);
 		return xVals[1] - xVals[0];
 	};
-
-	$: colorScale = scaleOrdinal()
-		.domain($custom.seriesNames)
-		.range(seriesColors);
-
 </script>
 
 <g class="bar-group">
@@ -27,7 +20,7 @@
 				y="{$yGet(d)}"
 				height={$yScale.bandwidth()}
 				width="{columnWidth(d)}"
-				fill={colorScale(series.key)}
+				fill={$zGet(series)}
 			></rect>
 		{/each}
 	{/each}

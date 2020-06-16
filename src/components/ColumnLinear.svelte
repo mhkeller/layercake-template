@@ -21,6 +21,15 @@
 </script>
 
 {#each $data as d, i}
-	<rect class='group-rect' data-id="{i}" x="{x0(d)}" y="{$yGet(d)}" width="{columnWidth(d)}" height="{columnHeight(d)}"
-	fill="{fill}" stroke="{stroke}" stroke-width="{strokeWidth}"></rect>
+	<rect
+		class='group-rect'
+		data-id="{i}"
+		x="{x0(d)}"
+		y="{$yGet(d)}"
+		width="{columnWidth(d)}"
+		height="{columnHeight(d)}"
+		fill="{fill}"
+		stroke="{stroke}"
+		stroke-width="{strokeWidth}"
+	/>
 {/each}

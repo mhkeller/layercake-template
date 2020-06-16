@@ -27,8 +27,8 @@
 
 <LayerCake
 	padding={{ top: 2, right: 6, bottom: 2, left: 6 }}
-	x={'x'}
-	y={'y'}
+	x={extentGetters.find(d => d.field === 'x').accessor}
+	y={extentGetters.find(d => d.field === 'y').accessor}
 	{data}
 	xDomain={$xDomain}
 	yDomain={$yDomain}

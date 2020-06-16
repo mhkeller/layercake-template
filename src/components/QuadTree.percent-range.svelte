@@ -19,10 +19,14 @@
 	function findItem (evt) {
 		e = evt;
 
-		const xLayerKey = `layer${x.toUpperCase()}`;
-		const yLayerKey = `layer${y.toUpperCase()}`;
+		const xLayer = `layer${x.toUpperCase()}`;
+		const yLayer = `layer${y.toUpperCase()}`;
 
-		found = finder.find(evt[xLayerKey], evt[yLayerKey], searchRadius) || {};
+		const xLayerVal = (evt[xLayer] / (x === 'x' ? $width : $height)) * 100;
+		const yLayerVal = (evt[yLayer] / (y === 'y' ? $height : $width)) * 100;
+
+		found = finder.find(xLayerVal, yLayerVal, searchRadius) || {};
+
 		visible = Object.keys(found).length > 0;
 	}
 

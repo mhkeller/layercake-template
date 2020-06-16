@@ -4,7 +4,7 @@
 
 	const { data, xGet, yGet, width, height } = getContext('LayerCake');
 
-	const { ctx } = getContext('ctx');
+	const { ctx } = getContext('canvas');
 
 	export let r;
 	export let fill;

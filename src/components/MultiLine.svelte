@@ -1,9 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { data, xGet, yGet } = getContext('LayerCake');
-
-	export let colorScale = d => '#000';
+	const { data, xGet, yGet, zGet, xScale, yScale, xRange, yRange, xDomain, yDomain } = getContext('LayerCake');
 
 	$: path = values => {
 		return 'M' + values
@@ -19,7 +17,7 @@
 		<path
 			class='path-line'
 			d='{path(group.values)}'
-			stroke="{colorScale(group.key)}"
+			stroke="{$zGet(group)}"
 		></path>
 	{/each}
 </g>

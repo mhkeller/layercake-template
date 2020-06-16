@@ -1,36 +1,30 @@
 <script>
   import { getContext } from 'svelte';
+  import { max } from 'd3-array';
 
-  const { data, x, xGet, yGet } = getContext('LayerCake');
+  const { data, x, y, xScale, yScale, xRange, yRange } = getContext('LayerCake');
 
+  /* --------------------------------------------
+	 * Title case the first letter
+	 */
 	function pretty (val) {
-    return val.charAt(0).toUpperCase() + val.slice(1, val.length);
+    return val.replace(/^\w/, d => d.toUpperCase());
   }
 
-  // Get the data for the last row (highest x-value)
-  $: max = values => {
-    let d;
-    let m = -Infinity;
-    let i = 0;
-    while (i < values.length) {
-      const val = $x(values[i]);
-      if (val > m) {
-        m = val;
-        d = values[i];
-      }
-      i += 1;
-    }
-    return d;
-  }
-
-  $: left = values => $xGet(max(values));
-  $: top = values => $yGet(max(values));
+  /* --------------------------------------------
+	 * Put the label on the highest value
+	 */
+  $: left = values => $xScale(max(values, $x)) /  Math.max(...$xRange);
+  $: top = values => $yScale(max(values, $y)) / Math.max(...$yRange);
 </script>
 
 {#each $data as group}
 	<div
     class="label"
-    style="top:{top(group.values)}px;left:{left(group.values)}px;"
+    style="
+      top:{top(group.values) * 100}%;
+      left:{left(group.values) * 100}%;
+    "
   >{pretty(group.key)}</div>
 {/each}
 

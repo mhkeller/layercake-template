@@ -1,23 +1,42 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { padding, yScale } = getContext('LayerCake');
+	const { padding, xRange, xScale, yScale } = getContext('LayerCake');
 
-	export let ticks = undefined;
+	export let ticks = 4;
 	export let gridlines = true;
 	export let formatTick = d => d;
-	export let tickNumber = undefined;
+	export let xTick = 0;
+	export let yTick = 0;
+	export let dxTick = 0;
+	export let dyTick = -4;
+	export let textAnchor = 'start';
 
-	$: tickVals = Array.isArray(ticks) ? ticks : $yScale.ticks(tickNumber);
+	$: isBandwidth = typeof $yScale.bandwidth === 'function';
+
+	$: tickVals = Array.isArray(ticks) ? ticks :
+		isBandwidth ?
+			$yScale.domain() :
+			$yScale.ticks(ticks);
 </script>
 
-<g class='axis y-axis' transform='translate(-{$padding.left}, 0)'>
+<g class='axis y-axis' transform='translate({-$padding.left}, 0)'>
 	{#each tickVals as tick, i}
-		<g class='tick tick-{tick}' transform='translate(0, {$yScale(tick)})'>
+		<g class='tick tick-{tick}' transform='translate({$xRange[0] + (isBandwidth ? $padding.left : 0)}, {$yScale(tick)})'>
 			{#if gridlines !== false}
-				<line x2='100%'></line>
+				<line
+					x2='100%'
+					y1={yTick + (isBandwidth ? ($yScale.bandwidth() / 2) : 0)}
+					y2={yTick + (isBandwidth ? ($yScale.bandwidth() / 2) : 0)}
+				></line>
 			{/if}
-			<text y='-4'>{formatTick(tick)}</text>
+			<text
+				x='{xTick}'
+				y='{yTick + (isBandwidth ? $yScale.bandwidth() / 2 : 0)}'
+				dx='{isBandwidth ? -5 : dxTick}'
+				dy='{isBandwidth ? 4 : dyTick}'
+				style="text-anchor:{isBandwidth ? 'end' : textAnchor};"
+			>{formatTick(tick)}</text>
 		</g>
 	{/each}
 </g>
@@ -35,7 +54,6 @@
 
 	.tick text {
 		fill: #666;
-		text-anchor: start;
 	}
 
 	.tick.tick-0 line {

@@ -3,7 +3,7 @@
 
 	const vals = ['top', 'right', 'bottom', 'left'];
 
-	export let container;
+	export let container = undefined;
 	export let annotations = [];
 
 	onMount(() => {

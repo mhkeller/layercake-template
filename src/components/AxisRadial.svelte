@@ -1,14 +1,14 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { width, height, rScale, extents, originalSettings } = getContext('LayerCake');
+	const { width, height, xScale, extents, config } = getContext('LayerCake');
 
 	export let linePaddingFactor = 1.1;
 	export let labelPaddingFactor = 1.25;
 
-	$: max = $rScale(Math.max(...$extents.r));
+	$: max = $xScale(Math.max(...$extents.x));
 
-	$: angleSlice = (Math.PI * 2) / $originalSettings.r.length;
+	$: angleSlice = (Math.PI * 2) / $config.x.length;
 
 	function anchor (total, i) {
 		if (i === 0 || i === total / 2) {
@@ -41,7 +41,7 @@
 		fill="none"
 	></circle>
 
-	{#each $originalSettings.r as label, i}
+	{#each $config.x as label, i}
 		<line
 			x1="0"
 			y1="0"
@@ -53,7 +53,7 @@
 		>
 		</line>
 		<text
-			text-anchor="{anchor($originalSettings.r.length, i)}"
+			text-anchor="{anchor($config.x.length, i)}"
 			dy="0.35em"
 			font-size="12px"
 			text-outline="#fff"

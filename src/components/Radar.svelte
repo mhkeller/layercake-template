@@ -2,9 +2,9 @@
 	import { getContext } from 'svelte';
 	import { line, curveCardinalClosed } from 'd3-shape';
 
-	const { data, width, height, rGet, originalSettings } = getContext('LayerCake');
+	const { data, width, height, xGet, config } = getContext('LayerCake');
 
-	$: angleSlice = (Math.PI * 2) / $originalSettings.r.length;
+	$: angleSlice = (Math.PI * 2) / $config.x.length;
 
 	$: path = line()
 		.curve(curveCardinalClosed)
@@ -34,14 +34,14 @@
 		<!-- Draw a line connecting all the dots -->
 		<path
 			class='path-line'
-			d='{path($rGet(row))}'
+			d='{path($xGet(row))}'
 			stroke="#f0c"
 			fill="#f0c"
 			fill-opacity="0.5"
 		></path>
 
 		<!-- Plot each dots -->
-		{#each $rGet(row) as circleR, i}
+		{#each $xGet(row) as circleR, i}
 			<circle
 				cx={cx(circleR, i)}
 				cy={cy(circleR, i)}
