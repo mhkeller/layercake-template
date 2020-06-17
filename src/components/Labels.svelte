@@ -7,9 +7,7 @@
   /* --------------------------------------------
 	 * Title case the first letter
 	 */
-	function pretty (val) {
-    return val.replace(/^\w/, d => d.toUpperCase());
-  }
+	const cap = val => val.replace(/^\w/, d => d.toUpperCase());
 
   /* --------------------------------------------
 	 * Put the label on the highest value
@@ -25,7 +23,7 @@
       top:{top(group.values) * 100}%;
       left:{left(group.values) * 100}%;
     "
-  >{pretty(group.key)}</div>
+  >{cap(group.key)}</div>
 {/each}
 
 <style>

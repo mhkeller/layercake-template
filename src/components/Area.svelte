@@ -3,6 +3,8 @@
 
 	const { data, xGet, yGet, xScale, yScale, extents } = getContext('LayerCake');
 
+	export let fill = '#ab00d610';
+
 	$: path = 'M' + $data
 		.map(d => {
 			return $xGet(d) + ',' + $yGet(d);
@@ -21,11 +23,4 @@
 	}
 </script>
 
-<path class='path-area' d='{area}'></path>
-
-<style>
-	.path-area {
-		fill: #ab00d610;
-	}
-</style>
-
+<path class='path-area' d='{area}' {fill}></path>

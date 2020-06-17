@@ -4,7 +4,7 @@
 
   import QuadTree from './QuadTree.svelte';
 
-  const { data, width, yScale, originalSettings } = getContext('LayerCake');
+  const { data, width, yScale, config } = getContext('LayerCake');
 
   const commas = format(',');
   const titleCase = d => d.replace(/^\w/, w => w.toUpperCase());
@@ -24,7 +24,7 @@
 	 */
   function sortResult(result) {
     if (Object.keys(result).length === 0) return [];
-    const rows = Object.keys(result).filter(d => d !== $originalSettings.x).map(key => {
+    const rows = Object.keys(result).filter(d => d !== $config.x).map(key => {
       return {
         key,
         value: result[key]
@@ -44,8 +44,20 @@
 		background: rgba(255, 255, 255, 0.85);
 		transform: translate(-50%, -100%);
     padding: 5px;
-    transition: left 250ms ease-out, top 250ms ease-out;
     z-index: 15;
+    pointer-events: none;
+  }
+  .line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    border-left: 1px dotted #666;
+    pointer-events: none;
+  }
+  .tooltip,
+  .line {
+    transition: left 250ms ease-out, top 250ms ease-out;
   }
   .title {
     font-weight: bold;
@@ -66,6 +78,9 @@
 >
   {#if visible === true}
     <div
+      style="left:{x}px;"
+      class="line"></div>
+    <div
       class="tooltip"
       style="
         width:{w}px;
@@ -73,7 +88,7 @@
         top:{$yScale(sortResult(found)[0].value) - tooltipOffset}px;
         left:{Math.min(Math.max(w2, x), $width - w2)}px;"
       >
-        <div class="title">{formatTitle(found[$originalSettings.x])}</div>
+        <div class="title">{formatTitle(found[$config.x])}</div>
         {#each sortResult(found) as row}
           <div class="row"><span class="key">{formatKey(row.key)}:</span> {formatValue(row.value)}</div>
         {/each}

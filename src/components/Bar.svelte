@@ -2,6 +2,7 @@
 	import { getContext } from 'svelte';
 
 	const { data, xGet, yGet, xScale, yScale } = getContext('LayerCake');
+	export let fill = '#00bbff';
 </script>
 
 <g class="bar-group">
@@ -13,14 +14,7 @@
 			y="{$yGet(d)}"
 			height={$yScale.bandwidth()}
 			width="{$xGet(d)}"
+			{fill}
 		></rect>
 	{/each}
 </g>
-
-<style>
-	.group-rect {
-		fill: #00bbff;
-	}
-</style>
-
-
