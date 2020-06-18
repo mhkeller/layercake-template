@@ -1,6 +1,7 @@
 <script>
 	import { stratify, pack, hierarchy } from 'd3-hierarchy'
 	import { getContext } from 'svelte';
+	import { format } from 'd3-format';
 
 	const { width, height, data } = getContext('LayerCake');
 
@@ -8,9 +9,10 @@
   export let idKey = 'id';
   export let parentKey = undefined;
   export let valueKey = 'value';
-  export let labelVisibilityThreshold = 25;
-  export let fill = '#ff00cc50';
-  export let stroke = '#f0c';
+  export let labelVisibilityThreshold = r => r > 25;
+  export let fill = '#fff';
+	export let stroke = '#999';
+	export let sortBy = (a, b) => b.value - a.value; // 'depth' is also a popular choice
 
   export let circlePadding = 0;
 
@@ -43,32 +45,38 @@
 
 	$: root = hierarchy(stratified)
 		.sum((d, i) => {
-			return d.data[valueKey];
+			return d.data[valueKey] || 1;
 		})
-		.sort((a, b) => b.value - a.value );
+		.sort(sortBy);
 
 	$: packed = packer(root);
 
   $: descendants = packed.descendants();
 
-  const titleCase = d => d.replace(/^\w/, w => w.toUpperCase());
+	const titleCase = d => d.replace(/^\w/, w => w.toUpperCase());
+	const commas = format(',');
 </script>
 
-<div class="circle-pack">
+<div class="circle-pack" data-has-parent-key="{parentKey !== undefined}">
 	{#each descendants as d}
 		<div
       class="circle-group"
       data-id="{d.data.id}"
-      data-visible="{d.r > labelVisibilityThreshold}"
-      style="left:{d.x}px;top:{d.y}px;"
+      data-visible="{labelVisibilityThreshold(d.r)}"
     >
-			<div class="circle"
-				style="width:{d.r * 2}px;height:{d.r * 2}px;background-color:{fill};border: 1px solid {stroke};"
+			<div
+				class="circle"
+				style="left:{d.x}px;top:{d.y}px;width:{d.r * 2}px;height:{d.r * 2}px;background-color:{fill};border: 1px solid {stroke};"
 			/>
-			<div class="text-group">
-				<div class="text">{titleCase(d.data.id)}</div>
-				<div class="text value" >{d.data.data[valueKey]}</div>
-			</div>
+				<div
+					class="text-group"
+					style="left:{d.x}px;top:{d.y - (labelVisibilityThreshold(d.r) ? 0 : (d.r + 4))}px;"
+				>
+					<div class="text">{titleCase(d.data.id)}</div>
+					{#if d.data.data[valueKey]}
+						<div class="text value" >{commas(d.data.data[valueKey])}</div>
+					{/if}
+				</div>
 		</div>
 	{/each}
 </div>
@@ -79,19 +87,20 @@
 		width: 100%;
 		height: 100%;
 	}
-	.circle-group,
+	.circle,
 	.text-group {
 		position: absolute;
 	}
-  .circle-group {
+  .circle {
 		transform: translate(-50%, -50%);
   }
-  .circle-group[data-id="all"] {
+	/* Hide the root node if we want, useful if we are creating our own root */
+  .circle-pack[data-has-parent-key="false"]	.circle-group[data-id="all"] {
 		display: none;
 	}
-  .circle-group:hover {
+  /* .circle-group:hover {
     z-index: 9999;
-  }
+  } */
 	.circle-group[data-visible="false"] .text-group {
 		display: none;
 		padding: 4px 7px;
@@ -100,11 +109,14 @@
 		transform: translate(-50%, -100%);
     top: -4px;
 	}
-  .circle-group:hover .text-group {
+  .circle-group[data-visible="false"]:hover .text-group {
+		z-index: 999;
 		display: block !important;
 	}
+	.circle-group[data-visible="false"]:hover .circle {
+		border-color: #000 !important;
+	}
 	.text-group {
-		z-index: 9999;
 		width: auto;
     top: 50%;
     left: 50%;
@@ -113,6 +125,7 @@
 		white-space: nowrap;
 		pointer-events: none;
 		cursor: pointer;
+		line-height: 14px;
 	}
 	.text {
 		color: #333;
@@ -122,14 +135,10 @@
 	}
 	.text.value{
 		font-size: 12px;
-		transform: translate(0, 1px)
 	}
 	.circle {
     border-radius: 50%;
     top: 0;
     left: 0;
-	}
-	.circle:hover {
-		border-color: #000;
 	}
 </style>
