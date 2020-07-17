@@ -13,14 +13,17 @@
 
 	export let nodeWidth = 5;
 	export let nodePadding = 10;
+	export let linkSort = null;
+	export let nodeId = d => d.id;
+	export let nodeAlign = Sankey.sankeyLeft;
 
 	$: sankey = Sankey.sankey()
-		.nodeAlign(Sankey.sankeyLeft)
+		.nodeAlign(nodeAlign)
 		.nodeWidth(nodeWidth)
 		.nodePadding(nodePadding)
-		.nodeId(d => d.id)
+		.nodeId(nodeId)
 		.size([$width, $height])
-		.linkSort(null);
+		.linkSort(linkSort);
 
 	$: sankeyData = sankey($data);
 
