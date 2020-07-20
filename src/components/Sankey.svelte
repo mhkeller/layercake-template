@@ -29,12 +29,11 @@
 
 	$: link = Sankey.sankeyLinkHorizontal();
 
-	$: fontSize = $width <= 320 ? '8px' : '12px';
+	$: fontSize = $width <= 320 ? 8 : 12;
 </script>
 
 <style>
 	text {
-		user-select: none;
 		pointer-events: none;
 	}
 </style>
@@ -61,9 +60,9 @@
 			<text
 				x={d.x0 < $width / 4 ? d.x1 + 6 : d.x0 - 6}
 				y={(d.y1 + d.y0) / 2}
-				alignment-baseline='middle'
+				dy="{(fontSize / 2) - 2}"
 				style="fill: {colorText(d)};
-							font-size: {fontSize};
+							font-size: {fontSize}px;
 							text-anchor: {d.x0 < $width / 4 ? 'start' : 'end'};">
 				{d.id}
 			</text>
