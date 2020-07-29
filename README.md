@@ -1,7 +1,7 @@
 Layer Cake Example
 ===
 
-This is a starter example for using [Layer Cake](https://layercake.graphics). It sets you up with the line and area chart as seen [in the examples](https://layercake.graphics/Line). It also comes with all the other components from the [guide](https://layercake.graphics) so you can mix and match
+This is a starter example for using [Layer Cake](https://layercake.graphics). It sets you up with the line and area chart as seen [in the examples](https://layercake.graphics/Line). It also comes with all the other components from the [guide](https://layercake.graphics) so you can mix and match.
 
 To create a new project based on this template using [degit](https://github.com/Rich-Harris/degit):
 
