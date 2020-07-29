@@ -10,6 +10,8 @@ npx degit mhkeller/layercake-template my-chart
 cd my-chart
 ```
 
+If you want an example setup for server-side rendering, see [this template](https://github.com/mhkeller/layercake-template-ssr).
+
 *Note that you will need to have [Node.js](https://nodejs.org) installed.*
 
 ## Get started
