@@ -5,6 +5,7 @@ import dsv from '@rollup/plugin-dsv';
 import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 import execute from "rollup-plugin-execute";
+import json from "@rollup/plugin-json";
 import config from './config.json';
 
 const production = !process.env.ROLLUP_WATCH;
@@ -20,6 +21,8 @@ export default {
 	plugins: [
 		// Allow for importing csv files as modules
 		dsv(),
+		// And importing json files
+		json(),
 
 		svelte({
 			// enable run-time checks when not in production

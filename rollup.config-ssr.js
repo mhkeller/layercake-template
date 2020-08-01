@@ -3,6 +3,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import dsv from '@rollup/plugin-dsv';
 import execute from "rollup-plugin-execute";
+import json from "@rollup/plugin-json";
 import config from './config.json';
 
 const hydrate = config.hydrate;
@@ -20,6 +21,7 @@ export default {
 			hydratable: hydrate
 		}),
 		dsv(),
+		json(),
 		resolve({
 			browser: true,
 			dedupe: ['svelte']
