@@ -10,8 +10,6 @@ npx degit mhkeller/layercake-template my-chart
 cd my-chart
 ```
 
-If you want an example setup for server-side rendering, see [this template](https://github.com/mhkeller/layercake-template-ssr).
-
 *Note that you will need to have [Node.js](https://nodejs.org) installed.*
 
 ## Get started
@@ -20,6 +18,7 @@ Install the dependencies...
 
 ```bash
 npm install
+npm run build
 npm start
 ```
 
@@ -34,3 +33,18 @@ npm run dev
 ```
 
 Your app will be running at [localhost:3000](http://localhost:3000).
+
+## Server-side rendering
+
+This template also lets you pre-render your project, which will build out the elements that don't rely on any client-side JavaScript.
+
+```sh
+npm run build:ssr
+npm start
+```
+
+Your app will be running at [localhost:5000](http://localhost:5000).
+
+#### Hydrating
+
+Sometimes you want to build out the HTML but your graphic still relies on some client-side JavaScript. In these cases, set `hydrate: true` in the `config.json` file. That will set the `hydratable` [compiler option](https://svelte.dev/docs#svelte_compile) and the `hydrate` [runtime option](https://svelte.dev/docs#Creating_a_component) to `true`. It will also add a script tag to load the `build/bundle.js` JavaScript file.

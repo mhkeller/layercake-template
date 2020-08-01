@@ -2,9 +2,9 @@
   "name": "layercake-template",
   "version": "1.0.0",
   "scripts": {
-    "render": "rollup -c rollup.config-ssr.js",
-    "prerender": "npm run build",
     "build": "rollup -c",
+    "build:ssr": "rollup -c rollup.config-ssr.js",
+    "prebuild:ssr": "npm run build",
     "dev": "rollup -c -w",
     "start": "sirv public"
   },
