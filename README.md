@@ -31,7 +31,7 @@ npm install
 npm run dev
 ```
 
-Your app will be running at [localhost:3000](http://localhost:5000).
+Your app will be running at [localhost:5000](http://localhost:5000).
 
 ## Server-side rendering
 
