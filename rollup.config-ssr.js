@@ -6,8 +6,6 @@ import execute from "rollup-plugin-execute";
 import json from "@rollup/plugin-json";
 import config from './config.json';
 
-const hydrate = config.hydrate;
-
 export default {
 	input: 'src/App.svelte',
 	output: {
@@ -18,7 +16,7 @@ export default {
 	plugins: [
 		svelte({
 			generate: 'ssr',
-			hydratable: hydrate
+			hydratable: config.hydrate
 		}),
 		dsv(),
 		json(),
