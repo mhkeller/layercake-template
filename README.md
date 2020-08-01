@@ -18,8 +18,7 @@ Install the dependencies...
 
 ```bash
 npm install
-npm run build
-npm start
+npm run build && npm start
 ```
 
 Your app will be running at [localhost:5000](http://localhost:5000).
