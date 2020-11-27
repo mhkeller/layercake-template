@@ -12,6 +12,7 @@
   export let labelVisibilityThreshold = r => r > 25;
   export let fill = '#fff';
 	export let stroke = '#999';
+	export let textColor = '#333';
 	export let sortBy = (a, b) => b.value - a.value; // 'depth' is also a popular choice
 
   export let circlePadding = 0;
@@ -70,7 +71,7 @@
 			/>
 				<div
 					class="text-group"
-					style="left:{d.x}px;top:{d.y - (labelVisibilityThreshold(d.r) ? 0 : (d.r + 4))}px;"
+					style="color:{textColor};left:{d.x}px;top:{d.y - (labelVisibilityThreshold(d.r) ? 0 : (d.r + 4))}px;"
 				>
 					<div class="text">{titleCase(d.data.id)}</div>
 					{#if d.data.data[valueKey]}
@@ -125,16 +126,15 @@
 		white-space: nowrap;
 		pointer-events: none;
 		cursor: pointer;
-		line-height: 14px;
+		line-height: 13px;
 	}
 	.text {
-		color: #333;
 		width: 100%;
-		font-size: 13px;
+		font-size: 11px;
 		/* text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; */
 	}
 	.text.value{
-		font-size: 12px;
+		font-size: 11px;
 	}
 	.circle {
     border-radius: 50%;
