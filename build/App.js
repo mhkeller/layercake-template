@@ -23,11 +23,6 @@ function subscribe(store, ...callbacks) {
     const unsub = store.subscribe(...callbacks);
     return unsub.unsubscribe ? () => unsub.unsubscribe() : unsub;
 }
-function get_store_value(store) {
-    let value;
-    subscribe(store, _ => value = _)();
-    return value;
-}
 
 let current_component;
 function set_current_component(component) {
@@ -35,7 +30,7 @@ function set_current_component(component) {
 }
 function get_current_component() {
     if (!current_component)
-        throw new Error(`Function called outside component initialization`);
+        throw new Error('Function called outside component initialization');
     return current_component;
 }
 function setContext(key, context) {
@@ -53,13 +48,6 @@ const escaped = {
 };
 function escape(html) {
     return String(html).replace(/["'&<>]/g, match => escaped[match]);
-}
-function each(items, fn) {
-    let str = '';
-    for (let i = 0; i < items.length; i += 1) {
-        str += fn(items[i], i);
-    }
-    return str;
 }
 function validate_component(component, name) {
     if (!component || !component.$$render) {
@@ -119,7 +107,7 @@ const subscriber_queue = [];
  */
 function readable(value, start) {
     return {
-        subscribe: writable(value, start).subscribe,
+        subscribe: writable(value, start).subscribe
     };
 }
 /**
@@ -241,6 +229,44 @@ function makeAccessor (acc) {
 
 /* --------------------------------------------
  *
+ * Remove undefined fields from an object
+ *
+ * --------------------------------------------
+ */
+
+// From Object.fromEntries polyfill https://github.com/tc39/proposal-object-from-entries/blob/master/polyfill.js#L1
+function fromEntries(iter) {
+	const obj = {};
+
+	for (const pair of iter) {
+		if (Object(pair) !== pair) {
+			throw new TypeError("iterable for fromEntries should yield objects");
+		}
+
+		// Consistency with Map: contract is that entry has "0" and "1" keys, not
+		// that it is an array or iterable.
+
+		const { "0": key, "1": val } = pair;
+
+		Object.defineProperty(obj, key, {
+			configurable: true,
+			enumerable: true,
+			writable: true,
+			value: val,
+		});
+	}
+
+	return obj;
+}
+
+function filterObject (obj) {
+	return fromEntries(Object.entries(obj).filter(([key, value]) => {
+		return value !== undefined;
+	}));
+}
+
+/* --------------------------------------------
+ *
  * Calculate the extents of desired fields
  * Returns an object like:
  * `{x: [0, 10], y: [-10, 10]}` if `fields` is
@@ -306,7 +332,7 @@ function calcExtents (data, fields) {
  * any null values with ones from our measured extents
  * otherwise, return the measured extent
  */
-function partialDomain (domain, directive) {
+function partialDomain (domain = [], directive) {
 	if (Array.isArray(directive) === true) {
 		return directive.map((d, i) => {
 			if (d === null) {
@@ -328,40 +354,58 @@ function ascending(a, b) {
   return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
 }
 
-function bisector(compare) {
-  if (compare.length === 1) compare = ascendingComparator(compare);
-  return {
-    left: function(a, x, lo, hi) {
-      if (lo == null) lo = 0;
-      if (hi == null) hi = a.length;
-      while (lo < hi) {
-        var mid = lo + hi >>> 1;
-        if (compare(a[mid], x) < 0) lo = mid + 1;
-        else hi = mid;
-      }
-      return lo;
-    },
-    right: function(a, x, lo, hi) {
-      if (lo == null) lo = 0;
-      if (hi == null) hi = a.length;
-      while (lo < hi) {
-        var mid = lo + hi >>> 1;
-        if (compare(a[mid], x) > 0) hi = mid;
-        else lo = mid + 1;
-      }
-      return lo;
+function bisector(f) {
+  let delta = f;
+  let compare = f;
+
+  if (f.length === 1) {
+    delta = (d, x) => f(d) - x;
+    compare = ascendingComparator(f);
+  }
+
+  function left(a, x, lo, hi) {
+    if (lo == null) lo = 0;
+    if (hi == null) hi = a.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (compare(a[mid], x) < 0) lo = mid + 1;
+      else hi = mid;
     }
-  };
+    return lo;
+  }
+
+  function right(a, x, lo, hi) {
+    if (lo == null) lo = 0;
+    if (hi == null) hi = a.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (compare(a[mid], x) > 0) hi = mid;
+      else lo = mid + 1;
+    }
+    return lo;
+  }
+
+  function center(a, x, lo, hi) {
+    if (lo == null) lo = 0;
+    if (hi == null) hi = a.length;
+    const i = left(a, x, lo, hi - 1);
+    return i > lo && delta(a[i - 1], x) > -delta(a[i], x) ? i - 1 : i;
+  }
+
+  return {left, center, right};
 }
 
 function ascendingComparator(f) {
-  return function(d, x) {
-    return ascending(f(d), x);
-  };
+  return (d, x) => ascending(f(d), x);
 }
 
-var ascendingBisect = bisector(ascending);
-var bisectRight = ascendingBisect.right;
+function number(x) {
+  return x === null ? NaN : +x;
+}
+
+const ascendingBisect = bisector(ascending);
+const bisectRight = ascendingBisect.right;
+bisector(number).center;
 
 var e10 = Math.sqrt(50),
     e5 = Math.sqrt(10),
@@ -385,10 +429,11 @@ function ticks(start, stop, count) {
     ticks = new Array(n = Math.ceil(stop - start + 1));
     while (++i < n) ticks[i] = (start + i) * step;
   } else {
-    start = Math.floor(start * step);
-    stop = Math.ceil(stop * step);
-    ticks = new Array(n = Math.ceil(start - stop + 1));
-    while (++i < n) ticks[i] = (start - i) / step;
+    step = -step;
+    start = Math.ceil(start * step);
+    stop = Math.floor(stop * step);
+    ticks = new Array(n = Math.ceil(stop - start + 1));
+    while (++i < n) ticks[i] = (start + i) / step;
   }
 
   if (reverse) ticks.reverse();
@@ -805,11 +850,7 @@ function hsl2rgb(h, m1, m2) {
       : m1) * 255;
 }
 
-function constant(x) {
-  return function() {
-    return x;
-  };
-}
+var constant = x => () => x;
 
 function linear(a, d) {
   return function(t) {
@@ -1004,13 +1045,13 @@ function interpolateRound(a, b) {
   };
 }
 
-function constant$1(x) {
+function constants(x) {
   return function() {
     return x;
   };
 }
 
-function number(x) {
+function number$1(x) {
   return +x;
 }
 
@@ -1023,7 +1064,7 @@ function identity(x) {
 function normalize(a, b) {
   return (b -= (a = +a))
       ? function(x) { return (x - a) / b; }
-      : constant$1(isNaN(b) ? NaN : 0.5);
+      : constants(isNaN(b) ? NaN : 0.5);
 }
 
 function clamper(a, b) {
@@ -1102,7 +1143,7 @@ function transformer() {
   };
 
   scale.domain = function(_) {
-    return arguments.length ? (domain = Array.from(_, number), rescale()) : domain.slice();
+    return arguments.length ? (domain = Array.from(_, number$1), rescale()) : domain.slice();
   };
 
   scale.range = function(_) {
@@ -1135,10 +1176,16 @@ function continuous() {
   return transformer()(identity, identity);
 }
 
+function formatDecimal(x) {
+  return Math.abs(x = Math.round(x)) >= 1e21
+      ? x.toLocaleString("en").replace(/,/g, "")
+      : x.toString(10);
+}
+
 // Computes the decimal coefficient and exponent of the specified number x with
 // significant digits p, where x is positive and p is in [1, 21] or undefined.
-// For example, formatDecimal(1.23) returns ["123", 0].
-function formatDecimal(x, p) {
+// For example, formatDecimalParts(1.23) returns ["123", 0].
+function formatDecimalParts(x, p) {
   if ((i = (x = p ? x.toExponential(p - 1) : x.toExponential()).indexOf("e")) < 0) return null; // NaN, ±Infinity
   var i, coefficient = x.slice(0, i);
 
@@ -1151,7 +1198,7 @@ function formatDecimal(x, p) {
 }
 
 function exponent(x) {
-  return x = formatDecimal(Math.abs(x)), x ? x[1] : NaN;
+  return x = formatDecimalParts(Math.abs(x)), x ? x[1] : NaN;
 }
 
 function formatGroup(grouping, thousands) {
@@ -1244,7 +1291,7 @@ function formatTrim(s) {
 var prefixExponent;
 
 function formatPrefixAuto(x, p) {
-  var d = formatDecimal(x, p);
+  var d = formatDecimalParts(x, p);
   if (!d) return x + "";
   var coefficient = d[0],
       exponent = d[1],
@@ -1253,11 +1300,11 @@ function formatPrefixAuto(x, p) {
   return i === n ? coefficient
       : i > n ? coefficient + new Array(i - n + 1).join("0")
       : i > 0 ? coefficient.slice(0, i) + "." + coefficient.slice(i)
-      : "0." + new Array(1 - i).join("0") + formatDecimal(x, Math.max(0, p + i - 1))[0]; // less than 1y!
+      : "0." + new Array(1 - i).join("0") + formatDecimalParts(x, Math.max(0, p + i - 1))[0]; // less than 1y!
 }
 
 function formatRounded(x, p) {
-  var d = formatDecimal(x, p);
+  var d = formatDecimalParts(x, p);
   if (!d) return x + "";
   var coefficient = d[0],
       exponent = d[1];
@@ -1267,19 +1314,19 @@ function formatRounded(x, p) {
 }
 
 var formatTypes = {
-  "%": function(x, p) { return (x * 100).toFixed(p); },
-  "b": function(x) { return Math.round(x).toString(2); },
-  "c": function(x) { return x + ""; },
-  "d": function(x) { return Math.round(x).toString(10); },
-  "e": function(x, p) { return x.toExponential(p); },
-  "f": function(x, p) { return x.toFixed(p); },
-  "g": function(x, p) { return x.toPrecision(p); },
-  "o": function(x) { return Math.round(x).toString(8); },
-  "p": function(x, p) { return formatRounded(x * 100, p); },
+  "%": (x, p) => (x * 100).toFixed(p),
+  "b": (x) => Math.round(x).toString(2),
+  "c": (x) => x + "",
+  "d": formatDecimal,
+  "e": (x, p) => x.toExponential(p),
+  "f": (x, p) => x.toFixed(p),
+  "g": (x, p) => x.toPrecision(p),
+  "o": (x) => Math.round(x).toString(8),
+  "p": (x, p) => formatRounded(x * 100, p),
   "r": formatRounded,
   "s": formatPrefixAuto,
-  "X": function(x) { return Math.round(x).toString(16).toUpperCase(); },
-  "x": function(x) { return Math.round(x).toString(16); }
+  "X": (x) => Math.round(x).toString(16).toUpperCase(),
+  "x": (x) => Math.round(x).toString(16)
 };
 
 function identity$1(x) {
@@ -1296,7 +1343,7 @@ function formatLocale(locale) {
       decimal = locale.decimal === undefined ? "." : locale.decimal + "",
       numerals = locale.numerals === undefined ? identity$1 : formatNumerals(map.call(locale.numerals, String)),
       percent = locale.percent === undefined ? "%" : locale.percent + "",
-      minus = locale.minus === undefined ? "-" : locale.minus + "",
+      minus = locale.minus === undefined ? "−" : locale.minus + "",
       nan = locale.nan === undefined ? "NaN" : locale.nan + "";
 
   function newFormat(specifier) {
@@ -1431,11 +1478,9 @@ var format;
 var formatPrefix;
 
 defaultLocale({
-  decimal: ".",
   thousands: ",",
   grouping: [3],
-  currency: ["$", ""],
-  minus: "-"
+  currency: ["$", ""]
 });
 
 function defaultLocale(definition) {
@@ -1501,38 +1546,36 @@ function linearish(scale) {
   scale.nice = function(count) {
     if (count == null) count = 10;
 
-    var d = domain(),
-        i0 = 0,
-        i1 = d.length - 1,
-        start = d[i0],
-        stop = d[i1],
-        step;
+    var d = domain();
+    var i0 = 0;
+    var i1 = d.length - 1;
+    var start = d[i0];
+    var stop = d[i1];
+    var prestep;
+    var step;
+    var maxIter = 10;
 
     if (stop < start) {
       step = start, start = stop, stop = step;
       step = i0, i0 = i1, i1 = step;
     }
-
-    step = tickIncrement(start, stop, count);
-
-    if (step > 0) {
-      start = Math.floor(start / step) * step;
-      stop = Math.ceil(stop / step) * step;
+    
+    while (maxIter-- > 0) {
       step = tickIncrement(start, stop, count);
-    } else if (step < 0) {
-      start = Math.ceil(start * step) / step;
-      stop = Math.floor(stop * step) / step;
-      step = tickIncrement(start, stop, count);
-    }
-
-    if (step > 0) {
-      d[i0] = Math.floor(start / step) * step;
-      d[i1] = Math.ceil(stop / step) * step;
-      domain(d);
-    } else if (step < 0) {
-      d[i0] = Math.ceil(start * step) / step;
-      d[i1] = Math.floor(stop * step) / step;
-      domain(d);
+      if (step === prestep) {
+        d[i0] = start;
+        d[i1] = stop;
+        return domain(d);
+      } else if (step > 0) {
+        start = Math.floor(start / step) * step;
+        stop = Math.ceil(stop / step) * step;
+      } else if (step < 0) {
+        start = Math.ceil(start * step) / step;
+        stop = Math.floor(stop * step) / step;
+      } else {
+        break;
+      }
+      prestep = step;
     }
 
     return scale;
@@ -1609,13 +1652,89 @@ var defaultScales = {
 
 /* --------------------------------------------
  *
+ * Determine whether a scale is a log, symlog, power or other
+ * This is not meant to be exhaustive of all the different types of
+ * scales in d3-scale and focuses on continuous scales
+ *
+ * --------------------------------------------
+ */
+function findScaleType(scale) {
+	if (scale.constant) {
+		return 'symlog';
+	}
+	if (scale.base) {
+		return 'log';
+	}
+	if (scale.exponent) {
+		if (scale.exponent() === 0.5) {
+			return 'sqrt';
+		}
+		return 'pow';
+	}
+	return 'other';
+}
+
+function identity$2 (d) {
+	return d;
+}
+
+function log(sign) {
+	return x => Math.log(sign * x);
+}
+
+function exp(sign) {
+	return x => sign * Math.exp(x);
+}
+
+function symlog(c) {
+	return x => Math.sign(x) * Math.log1p(Math.abs(x / c));
+}
+
+function symexp(c) {
+	return x => Math.sign(x) * Math.expm1(Math.abs(x)) * c;
+}
+
+function pow$1(exponent) {
+	return function powFn(x) {
+		return x < 0 ? -Math.pow(-x, exponent) : Math.pow(x, exponent);
+	};
+}
+
+function getPadFunctions(scale) {
+	const scaleType = findScaleType(scale);
+
+	if (scaleType === 'log') {
+		const sign = Math.sign(scale.domain()[0]);
+		return { lift: log(sign), ground: exp(sign), scaleType };
+	}
+	if (scaleType === 'pow') {
+		const exponent = 1;
+		return { lift: pow$1(exponent), ground: pow$1(1 / exponent), scaleType };
+	}
+	if (scaleType === 'sqrt') {
+		const exponent = 0.5;
+		return { lift: pow$1(exponent), ground: pow$1(1 / exponent), scaleType };
+	}
+	if (scaleType === 'symlog') {
+		const constant = 1;
+		return { lift: symlog(constant), ground: symexp(constant), scaleType };
+	}
+
+	return { lift: identity$2, ground: identity$2, scaleType };
+}
+
+/* --------------------------------------------
+ *
  * Returns a modified scale domain by in/decreasing
  * the min/max by taking the desired difference
  * in pixels and converting it to units of data.
  * Returns an array that you can set as the new domain.
+ * Padding contributed by @veltman.
+ * See here for discussion of transforms: https://github.com/d3/d3-scale/issues/150
  *
  * --------------------------------------------
  */
+
 function padScale (scale, padding) {
 	if (typeof scale.range !== 'function') {
 		throw new Error('Scale method `range` must be a function');
@@ -1627,26 +1746,31 @@ function padScale (scale, padding) {
 		return scale.domain();
 	}
 
-	const domain = scale.domain();
-
-	const range = scale.range();
-	const domainExtent = domain[1] - domain[0];
-
-	const w = Math.abs(range[1] - range[0]);
-
-	const paddedDomain = domain.slice();
-	const pl = padding.length;
-	for (let i = 0; i < pl; i += 1) {
-		const sign = i === 0 ? -1 : 1;
-		const isTime = Object.prototype.toString.call(domain[i]) === '[object Date]';
-
-		const perc = padding[i] / w;
-		const paddingAdjuster = domainExtent * perc;
-		const d = (isTime ? domain[i].getTime() : domain[i]);
-		const adjustedDomain = d + paddingAdjuster * sign;
-		paddedDomain[i] = isTime ? new Date(adjustedDomain) : adjustedDomain;
+	if (scale.domain().length !== 2) {
+		console.warn('[LayerCake] The scale is expected to have a domain of length 2 to use padding. Are you sure you want to use padding? Your scale\'s domain is:', scale.domain());
 	}
-	return paddedDomain;
+	if (scale.range().length !== 2) {
+		console.warn('[LayerCake] The scale is expected to have a range of length 2 to use padding. Are you sure you want to use padding? Your scale\'s range is:', scale.range());
+	}
+
+	const { lift, ground } = getPadFunctions(scale);
+
+	const d0 = scale.domain()[0];
+
+	const isTime = Object.prototype.toString.call(d0) === '[object Date]';
+
+	const [d1, d2] = scale.domain().map(d => {
+		return isTime ? lift(d.getTime()) : lift(d);
+	});
+	const [r1, r2] = scale.range();
+	const paddingLeft = padding[0] || 0;
+	const paddingRight = padding[1] || 0;
+
+	const step = (d2 - d1) / (Math.abs(r2 - r1) - paddingLeft - paddingRight); // Math.abs() to properly handle reversed scales
+
+	return [d1 - paddingLeft * step, paddingRight * step + d2].map(d => {
+		return isTime ? ground(new Date(d)) : ground(d);
+	});
 }
 
 /* eslint-disable no-nested-ternary */
@@ -1732,19 +1856,20 @@ var defaultReverses = {
 	r: false
 };
 
-/* node_modules/layercake/src/LayerCake.svelte generated by Svelte v3.23.2 */
+/* node_modules/layercake/src/LayerCake.svelte generated by Svelte v3.32.2 */
 
 const css = {
 	code: ".layercake-container.svelte-vhzpsp,.layercake-container.svelte-vhzpsp *{box-sizing:border-box}.layercake-container.svelte-vhzpsp{width:100%;height:100%}",
-	map: "{\"version\":3,\"file\":\"LayerCake.svelte\",\"sources\":[\"LayerCake.svelte\"],\"sourcesContent\":[\"<script>\\n\\timport { setContext } from 'svelte';\\n\\timport { writable, derived } from 'svelte/store';\\n\\n\\timport makeAccessor from './utils/makeAccessor.js';\\n\\timport calcExtents from './lib/calcExtents.js';\\n\\timport calcDomain from './helpers/calcDomain.js';\\n\\timport createScale from './helpers/createScale.js';\\n\\timport createGetter from './helpers/createGetter.js';\\n\\timport getRange from './helpers/getRange.js';\\n\\timport defaultScales from './settings/defaultScales.js';\\n\\timport defaultReverses from './settings/defaultReverses.js';\\n\\n\\texport let ssr = false;\\n\\texport let pointerEvents = true;\\n\\texport let position = 'relative';\\n\\texport let percentRange = false;\\n\\n\\texport let width = undefined;\\n\\texport let height = undefined;\\n\\n\\texport let containerWidth = width || 100;\\n\\texport let containerHeight = height || 100;\\n\\n\\t/* --------------------------------------------\\n\\t * Parameters\\n\\t * Values that computed properties are based on and that\\n\\t * can be easily extended from config values\\n\\t *\\n\\t */\\n\\texport let x = undefined;\\n\\texport let y = undefined;\\n\\texport let z = undefined;\\n\\texport let r = undefined;\\n\\texport let custom = {};\\n\\texport let data = [];\\n\\texport let xDomain = undefined;\\n\\texport let yDomain = undefined;\\n\\texport let zDomain = undefined;\\n\\texport let rDomain = undefined;\\n\\texport let xNice = false;\\n\\texport let yNice = false;\\n\\texport let zNice = false;\\n\\texport let rNice = false;\\n\\texport let xReverse = defaultReverses.x;\\n\\texport let yReverse = defaultReverses.y;\\n\\texport let zReverse = defaultReverses.z;\\n\\texport let rReverse = defaultReverses.r;\\n\\texport let xPadding = undefined;\\n\\texport let yPadding = undefined;\\n\\texport let zPadding = undefined;\\n\\texport let rPadding = undefined;\\n\\texport let xScale = defaultScales.x;\\n\\texport let yScale = defaultScales.y;\\n\\texport let zScale = defaultScales.y;\\n\\texport let rScale = defaultScales.r;\\n\\texport let xRange = undefined;\\n\\texport let yRange = undefined;\\n\\texport let zRange = undefined;\\n\\texport let rRange = undefined;\\n\\texport let padding = {};\\n\\texport let extents = {};\\n\\texport let flatData = undefined;\\n\\n\\t/* --------------------------------------------\\n\\t * Preserve a copy of our passed in settings before we modify them\\n\\t * Return this to the user's context so they can reference things if need be\\n\\t * Add the active keys since those aren't on our settings object.\\n\\t * This is mostly an escape-hatch\\n\\t */\\n\\tconst config = {};\\n\\t$: if (x) config.x = x;\\n\\t$: if (y) config.y = y;\\n\\t$: if (z) config.z = z;\\n\\t$: if (r) config.r = r;\\n\\t$: if (xDomain) config.xDomain = xDomain;\\n\\t$: if (yDomain) config.yDomain = yDomain;\\n\\t$: if (zDomain) config.zDomain = zDomain;\\n\\t$: if (rDomain) config.rDomain = rDomain;\\n\\t$: if (xRange) config.xRange = xRange;\\n\\t$: if (yRange) config.yRange = yRange;\\n\\t$: if (zRange) config.zRange = zRange;\\n\\t$: if (rRange) config.rRange = rRange;\\n\\n\\t/* --------------------------------------------\\n\\t * Make store versions of each parameter\\n\\t * Prefix these with `_` to keep things organized\\n\\t */\\n\\tconst _percentRange = writable();\\n\\tconst _containerWidth = writable();\\n\\tconst _containerHeight = writable();\\n\\tconst _x = writable();\\n\\tconst _y = writable();\\n\\tconst _z = writable();\\n\\tconst _r = writable();\\n\\tconst _custom = writable();\\n\\tconst _data = writable();\\n\\tconst _xDomain = writable();\\n\\tconst _yDomain = writable();\\n\\tconst _zDomain = writable();\\n\\tconst _rDomain = writable();\\n\\tconst _xNice = writable();\\n\\tconst _yNice = writable();\\n\\tconst _zNice = writable();\\n\\tconst _rNice = writable();\\n\\tconst _xReverse = writable();\\n\\tconst _yReverse = writable();\\n\\tconst _zReverse = writable();\\n\\tconst _rReverse = writable();\\n\\tconst _xPadding = writable();\\n\\tconst _yPadding = writable();\\n\\tconst _zPadding = writable();\\n\\tconst _rPadding = writable();\\n\\tconst _xScale = writable();\\n\\tconst _yScale = writable();\\n\\tconst _zScale = writable();\\n\\tconst _rScale = writable();\\n\\tconst _xRange = writable();\\n\\tconst _yRange = writable();\\n\\tconst _zRange = writable();\\n\\tconst _rRange = writable();\\n\\tconst _padding = writable();\\n\\tconst _flatData = writable();\\n\\tconst _extents = writable();\\n\\tconst _config = writable(config);\\n\\n\\t$: _percentRange.set(percentRange);\\n\\t$: _containerWidth.set(containerWidth);\\n\\t$: _containerHeight.set(containerHeight);\\n\\t$: _x.set(makeAccessor(x));\\n\\t$: _y.set(makeAccessor(y));\\n\\t$: _z.set(makeAccessor(z));\\n\\t$: _r.set(makeAccessor(r));\\n\\t$: _xDomain.set(xDomain);\\n\\t$: _yDomain.set(yDomain);\\n\\t$: _zDomain.set(zDomain);\\n\\t$: _rDomain.set(rDomain);\\n\\t$: _custom.set(custom);\\n\\t$: _data.set(data);\\n\\t$: _xNice.set(xNice);\\n\\t$: _yNice.set(yNice);\\n\\t$: _zNice.set(zNice);\\n\\t$: _rNice.set(rNice);\\n\\t$: _xReverse.set(xReverse);\\n\\t$: _yReverse.set(yReverse);\\n\\t$: _zReverse.set(zReverse);\\n\\t$: _rReverse.set(rReverse);\\n\\t$: _xPadding.set(xPadding);\\n\\t$: _yPadding.set(yPadding);\\n\\t$: _zPadding.set(zPadding);\\n\\t$: _rPadding.set(rPadding);\\n\\t$: _xScale.set(xScale);\\n\\t$: _yScale.set(yScale);\\n\\t$: _zScale.set(zScale);\\n\\t$: _rScale.set(rScale);\\n\\t$: _xRange.set(xRange);\\n\\t$: _yRange.set(yRange);\\n\\t$: _zRange.set(zRange);\\n\\t$: _rRange.set(rRange);\\n\\t$: _padding.set(padding);\\n\\t$: _extents.set(extents);\\n\\t$: _flatData.set(flatData || data);\\n\\n\\t/* --------------------------------------------\\n\\t * Create derived values\\n\\t * Suffix these with `_d`\\n\\t */\\n\\tconst activeGetters_d = derived([_x, _y, _z, _r], ([$x, $y, $z, $r]) => {\\n\\t\\treturn [\\n\\t\\t\\t{ field: 'x', accessor: $x },\\n\\t\\t\\t{ field: 'y', accessor: $y },\\n\\t\\t\\t{ field: 'z', accessor: $z },\\n\\t\\t\\t{ field: 'r', accessor: $r }\\n\\t\\t].filter(d => d.accessor);\\n\\t});\\n\\n\\tconst padding_d = derived([_padding, _containerWidth, _containerHeight], ([$padding]) => {\\n\\t\\tconst defaultPadding = { top: 0, right: 0, bottom: 0, left: 0 };\\n\\t\\treturn Object.assign(defaultPadding, $padding);\\n\\t});\\n\\n\\tconst box_d = derived([_containerWidth, _containerHeight, padding_d], ([$containerWidth, $containerHeight, $padding]) => {\\n\\t\\tconst b = {};\\n\\t\\tb.top = $padding.top;\\n\\t\\tb.right = $containerWidth - $padding.right;\\n\\t\\tb.bottom = $containerHeight - $padding.bottom;\\n\\t\\tb.left = $padding.left;\\n\\t\\tb.width = b.right - b.left;\\n\\t\\tb.height = b.bottom - b.top;\\n\\t\\tif (b.width < 0 && b.height < 0) {\\n\\t\\t\\tconsole.error('[LayerCake] Target div has negative width and height. Did you forget to set a width or height on the container?');\\n\\t\\t} else if (b.width < 0) {\\n\\t\\t\\tconsole.error('[LayerCake] Target div has a negative width. Did you forget to set that CSS on the container?');\\n\\t\\t} else if (b.height < 0) {\\n\\t\\t\\tconsole.error('[LayerCake] Target div has negative height. Did you forget to set that CSS on the container?');\\n\\t\\t}\\n\\t\\treturn b;\\n\\t});\\n\\n\\tconst width_d = derived([box_d], ([$box]) => {\\n\\t\\treturn $box.width;\\n\\t});\\n\\n\\tconst height_d = derived([box_d], ([$box]) => {\\n\\t\\treturn $box.height;\\n\\t});\\n\\n\\t/* --------------------------------------------\\n\\t * Calculate extents by taking the extent of the data\\n\\t * and filling that in with anything set by the user\\n\\t */\\n\\tconst extents_d = derived([_flatData, activeGetters_d, _extents], ([$flatData, $activeGetters, $extents]) => {\\n\\t\\treturn { ...calcExtents($flatData, $activeGetters.filter(d => !$extents[d.field])), ...$extents };\\n\\t});\\n\\n\\tconst xDomain_d = derived([extents_d, _xDomain], calcDomain('x'));\\n\\tconst yDomain_d = derived([extents_d, _yDomain], calcDomain('y'));\\n\\tconst zDomain_d = derived([extents_d, _zDomain], calcDomain('z'));\\n\\tconst rDomain_d = derived([extents_d, _rDomain], calcDomain('r'));\\n\\n\\tconst xScale_d = derived([_xScale, extents_d, xDomain_d, _xPadding, _xNice, _xReverse, width_d, height_d, _xRange, _percentRange], createScale('x'));\\n\\tconst xGet_d = derived([_x, xScale_d], createGetter);\\n\\n\\tconst yScale_d = derived([_yScale, extents_d, yDomain_d, _yPadding, _yNice, _yReverse, width_d, height_d, _yRange, _percentRange], createScale('y'));\\n\\tconst yGet_d = derived([_y, yScale_d], createGetter);\\n\\n\\tconst zScale_d = derived([_zScale, extents_d, zDomain_d, _zPadding, _zNice, _zReverse, width_d, height_d, _zRange, _percentRange], createScale('z'));\\n\\tconst zGet_d = derived([_z, zScale_d], createGetter);\\n\\n\\tconst rScale_d = derived([_rScale, extents_d, rDomain_d, _rPadding, _rNice, _rReverse, width_d, height_d, _rRange, _percentRange], createScale('r'));\\n\\tconst rGet_d = derived([_r, rScale_d], createGetter);\\n\\n\\tconst xRange_d = derived([xScale_d], getRange);\\n\\tconst yRange_d = derived([yScale_d], getRange);\\n\\tconst zRange_d = derived([zScale_d], getRange);\\n\\tconst rRange_d = derived([rScale_d], getRange);\\n\\n\\tconst aspectRatio_d = derived([width_d, height_d], ([$aspectRatio, $width, $height]) => {\\n\\t\\treturn $width / $height;\\n\\t});\\n\\n\\t$: context = {\\n\\t\\tactiveGetters: activeGetters_d,\\n\\t\\twidth: width_d,\\n\\t\\theight: height_d,\\n\\t\\tpercentRange: _percentRange,\\n\\t\\taspectRatio: aspectRatio_d,\\n\\t\\tcontainerWidth: _containerWidth,\\n\\t\\tcontainerHeight: _containerHeight,\\n\\t\\tx: _x,\\n\\t\\ty: _y,\\n\\t\\tz: _z,\\n\\t\\tr: _r,\\n\\t\\tcustom: _custom,\\n\\t\\tdata: _data,\\n\\t\\txNice: _xNice,\\n\\t\\tyNice: _yNice,\\n\\t\\tzNice: _zNice,\\n\\t\\trNice: _rNice,\\n\\t\\txReverse: _xReverse,\\n\\t\\tyReverse: _yReverse,\\n\\t\\tzReverse: _zReverse,\\n\\t\\trReverse: _rReverse,\\n\\t\\txPadding: _xPadding,\\n\\t\\tyPadding: _yPadding,\\n\\t\\tzPadding: _zPadding,\\n\\t\\trPadding: _rPadding,\\n\\t\\tpadding: padding_d,\\n\\t\\tflatData: _flatData,\\n\\t\\textents: extents_d,\\n\\t\\txDomain: xDomain_d,\\n\\t\\tyDomain: yDomain_d,\\n\\t\\tzDomain: zDomain_d,\\n\\t\\trDomain: rDomain_d,\\n\\t\\txRange: xRange_d,\\n\\t\\tyRange: yRange_d,\\n\\t\\tzRange: zRange_d,\\n\\t\\trRange: rRange_d,\\n\\t\\tconfig: _config,\\n\\t\\txScale: xScale_d,\\n\\t\\txGet: xGet_d,\\n\\t\\tyScale: yScale_d,\\n\\t\\tyGet: yGet_d,\\n\\t\\tzScale: zScale_d,\\n\\t\\tzGet: zGet_d,\\n\\t\\trScale: rScale_d,\\n\\t\\trGet: rGet_d\\n\\t};\\n\\n\\t$: setContext('LayerCake', context);\\n</script>\\n\\n{#if (ssr === true || typeof window !== 'undefined')}\\n\\t<div\\n\\t\\tclass=\\\"layercake-container\\\"\\n\\t\\tstyle=\\\"\\n\\t\\t\\tposition:{position};\\n\\t\\t\\t{position === 'absolute' ? 'top:0;right:0;bottom:0;left:0;' : ''}\\n\\t\\t\\t{pointerEvents === false ? 'pointer-events:none;' : ''}\\n\\t\\t\\\"\\n\\t\\tbind:clientWidth={containerWidth}\\n\\t\\tbind:clientHeight={containerHeight}\\n\\t>\\n\\t\\t<slot\\n\\t\\t\\twidth={$width_d}\\n\\t\\t\\theight={$height_d}\\n\\t\\t\\taspectRatio={$aspectRatio_d}\\n\\t\\t\\tcontainerWidth={$_containerWidth}\\n\\t\\t\\tcontainerHeight={$_containerHeight}\\n\\t\\t></slot>\\n\\t</div>\\n{/if}\\n\\n<style>\\n\\t.layercake-container,\\n\\t.layercake-container :global(*) {\\n\\t\\tbox-sizing: border-box;\\n\\t}\\n\\t.layercake-container {\\n\\t\\twidth: 100%;\\n\\t\\theight: 100%;\\n\\t}\\n</style>\\n\"],\"names\":[],\"mappings\":\"AA0TC,kCAAoB,CACpB,kCAAoB,CAAC,AAAQ,CAAC,AAAE,CAAC,AAChC,UAAU,CAAE,UAAU,AACvB,CAAC,AACD,oBAAoB,cAAC,CAAC,AACrB,KAAK,CAAE,IAAI,CACX,MAAM,CAAE,IAAI,AACb,CAAC\"}"
+	map: "{\"version\":3,\"file\":\"LayerCake.svelte\",\"sources\":[\"LayerCake.svelte\"],\"sourcesContent\":[\"<script>\\n\\timport { setContext } from 'svelte';\\n\\timport { writable, derived } from 'svelte/store';\\n\\n\\timport makeAccessor from './utils/makeAccessor.js';\\n\\timport filterObject from './utils/filterObject.js';\\n\\timport calcExtents from './lib/calcExtents.js';\\n\\timport calcDomain from './helpers/calcDomain.js';\\n\\timport createScale from './helpers/createScale.js';\\n\\timport createGetter from './helpers/createGetter.js';\\n\\timport getRange from './helpers/getRange.js';\\n\\timport defaultScales from './settings/defaultScales.js';\\n\\timport defaultReverses from './settings/defaultReverses.js';\\n\\n\\texport let ssr = false;\\n\\texport let pointerEvents = true;\\n\\texport let position = 'relative';\\n\\texport let percentRange = false;\\n\\n\\texport let width = undefined;\\n\\texport let height = undefined;\\n\\n\\texport let containerWidth = width || 100;\\n\\texport let containerHeight = height || 100;\\n\\n\\t/* --------------------------------------------\\n\\t * Parameters\\n\\t * Values that computed properties are based on and that\\n\\t * can be easily extended from config values\\n\\t *\\n\\t */\\n\\texport let x = undefined;\\n\\texport let y = undefined;\\n\\texport let z = undefined;\\n\\texport let r = undefined;\\n\\texport let custom = {};\\n\\texport let data = [];\\n\\texport let xDomain = undefined;\\n\\texport let yDomain = undefined;\\n\\texport let zDomain = undefined;\\n\\texport let rDomain = undefined;\\n\\texport let xNice = false;\\n\\texport let yNice = false;\\n\\texport let zNice = false;\\n\\texport let rNice = false;\\n\\texport let xReverse = defaultReverses.x;\\n\\texport let yReverse = defaultReverses.y;\\n\\texport let zReverse = defaultReverses.z;\\n\\texport let rReverse = defaultReverses.r;\\n\\texport let xPadding = undefined;\\n\\texport let yPadding = undefined;\\n\\texport let zPadding = undefined;\\n\\texport let rPadding = undefined;\\n\\texport let xScale = defaultScales.x;\\n\\texport let yScale = defaultScales.y;\\n\\texport let zScale = defaultScales.y;\\n\\texport let rScale = defaultScales.r;\\n\\texport let xRange = undefined;\\n\\texport let yRange = undefined;\\n\\texport let zRange = undefined;\\n\\texport let rRange = undefined;\\n\\texport let padding = {};\\n\\texport let extents = {};\\n\\texport let flatData = undefined;\\n\\n\\t/* --------------------------------------------\\n\\t * Preserve a copy of our passed in settings before we modify them\\n\\t * Return this to the user's context so they can reference things if need be\\n\\t * Add the active keys since those aren't on our settings object.\\n\\t * This is mostly an escape-hatch\\n\\t */\\n\\tconst config = {};\\n\\t$: if (x) config.x = x;\\n\\t$: if (y) config.y = y;\\n\\t$: if (z) config.z = z;\\n\\t$: if (r) config.r = r;\\n\\t$: if (xDomain) config.xDomain = xDomain;\\n\\t$: if (yDomain) config.yDomain = yDomain;\\n\\t$: if (zDomain) config.zDomain = zDomain;\\n\\t$: if (rDomain) config.rDomain = rDomain;\\n\\t$: if (xRange) config.xRange = xRange;\\n\\t$: if (yRange) config.yRange = yRange;\\n\\t$: if (zRange) config.zRange = zRange;\\n\\t$: if (rRange) config.rRange = rRange;\\n\\n\\t/* --------------------------------------------\\n\\t * Make store versions of each parameter\\n\\t * Prefix these with `_` to keep things organized\\n\\t */\\n\\tconst _percentRange = writable();\\n\\tconst _containerWidth = writable();\\n\\tconst _containerHeight = writable();\\n\\tconst _x = writable();\\n\\tconst _y = writable();\\n\\tconst _z = writable();\\n\\tconst _r = writable();\\n\\tconst _custom = writable();\\n\\tconst _data = writable();\\n\\tconst _xDomain = writable();\\n\\tconst _yDomain = writable();\\n\\tconst _zDomain = writable();\\n\\tconst _rDomain = writable();\\n\\tconst _xNice = writable();\\n\\tconst _yNice = writable();\\n\\tconst _zNice = writable();\\n\\tconst _rNice = writable();\\n\\tconst _xReverse = writable();\\n\\tconst _yReverse = writable();\\n\\tconst _zReverse = writable();\\n\\tconst _rReverse = writable();\\n\\tconst _xPadding = writable();\\n\\tconst _yPadding = writable();\\n\\tconst _zPadding = writable();\\n\\tconst _rPadding = writable();\\n\\tconst _xScale = writable();\\n\\tconst _yScale = writable();\\n\\tconst _zScale = writable();\\n\\tconst _rScale = writable();\\n\\tconst _xRange = writable();\\n\\tconst _yRange = writable();\\n\\tconst _zRange = writable();\\n\\tconst _rRange = writable();\\n\\tconst _padding = writable();\\n\\tconst _flatData = writable();\\n\\tconst _extents = writable();\\n\\tconst _config = writable(config);\\n\\n\\t$: _percentRange.set(percentRange);\\n\\t$: _containerWidth.set(containerWidth);\\n\\t$: _containerHeight.set(containerHeight);\\n\\t$: _x.set(makeAccessor(x));\\n\\t$: _y.set(makeAccessor(y));\\n\\t$: _z.set(makeAccessor(z));\\n\\t$: _r.set(makeAccessor(r));\\n\\t$: _xDomain.set(xDomain);\\n\\t$: _yDomain.set(yDomain);\\n\\t$: _zDomain.set(zDomain);\\n\\t$: _rDomain.set(rDomain);\\n\\t$: _custom.set(custom);\\n\\t$: _data.set(data);\\n\\t$: _xNice.set(xNice);\\n\\t$: _yNice.set(yNice);\\n\\t$: _zNice.set(zNice);\\n\\t$: _rNice.set(rNice);\\n\\t$: _xReverse.set(xReverse);\\n\\t$: _yReverse.set(yReverse);\\n\\t$: _zReverse.set(zReverse);\\n\\t$: _rReverse.set(rReverse);\\n\\t$: _xPadding.set(xPadding);\\n\\t$: _yPadding.set(yPadding);\\n\\t$: _zPadding.set(zPadding);\\n\\t$: _rPadding.set(rPadding);\\n\\t$: _xScale.set(xScale);\\n\\t$: _yScale.set(yScale);\\n\\t$: _zScale.set(zScale);\\n\\t$: _rScale.set(rScale);\\n\\t$: _xRange.set(xRange);\\n\\t$: _yRange.set(yRange);\\n\\t$: _zRange.set(zRange);\\n\\t$: _rRange.set(rRange);\\n\\t$: _padding.set(padding);\\n\\t$: _extents.set(filterObject(extents));\\n\\t$: _flatData.set(flatData || data);\\n\\n\\t/* --------------------------------------------\\n\\t * Create derived values\\n\\t * Suffix these with `_d`\\n\\t */\\n\\tconst activeGetters_d = derived([_x, _y, _z, _r], ([$x, $y, $z, $r]) => {\\n\\t\\treturn [\\n\\t\\t\\t{ field: 'x', accessor: $x },\\n\\t\\t\\t{ field: 'y', accessor: $y },\\n\\t\\t\\t{ field: 'z', accessor: $z },\\n\\t\\t\\t{ field: 'r', accessor: $r }\\n\\t\\t].filter(d => d.accessor);\\n\\t});\\n\\n\\tconst padding_d = derived([_padding, _containerWidth, _containerHeight], ([$padding]) => {\\n\\t\\tconst defaultPadding = { top: 0, right: 0, bottom: 0, left: 0 };\\n\\t\\treturn Object.assign(defaultPadding, $padding);\\n\\t});\\n\\n\\tconst box_d = derived([_containerWidth, _containerHeight, padding_d], ([$containerWidth, $containerHeight, $padding]) => {\\n\\t\\tconst b = {};\\n\\t\\tb.top = $padding.top;\\n\\t\\tb.right = $containerWidth - $padding.right;\\n\\t\\tb.bottom = $containerHeight - $padding.bottom;\\n\\t\\tb.left = $padding.left;\\n\\t\\tb.width = b.right - b.left;\\n\\t\\tb.height = b.bottom - b.top;\\n\\t\\tif (b.width < 0 && b.height < 0) {\\n\\t\\t\\tconsole.error('[LayerCake] Target div has negative width and height. Did you forget to set a width or height on the container?');\\n\\t\\t} else if (b.width < 0) {\\n\\t\\t\\tconsole.error('[LayerCake] Target div has a negative width. Did you forget to set that CSS on the container?');\\n\\t\\t} else if (b.height < 0) {\\n\\t\\t\\tconsole.error('[LayerCake] Target div has negative height. Did you forget to set that CSS on the container?');\\n\\t\\t}\\n\\t\\treturn b;\\n\\t});\\n\\n\\tconst width_d = derived([box_d], ([$box]) => {\\n\\t\\treturn $box.width;\\n\\t});\\n\\n\\tconst height_d = derived([box_d], ([$box]) => {\\n\\t\\treturn $box.height;\\n\\t});\\n\\n\\t/* --------------------------------------------\\n\\t * Calculate extents by taking the extent of the data\\n\\t * and filling that in with anything set by the user\\n\\t */\\n\\tconst extents_d = derived([_flatData, activeGetters_d, _extents], ([$flatData, $activeGetters, $extents]) => {\\n\\t\\treturn { ...calcExtents($flatData, $activeGetters.filter(d => !$extents[d.field])), ...$extents };\\n\\t});\\n\\n\\tconst xDomain_d = derived([extents_d, _xDomain], calcDomain('x'));\\n\\tconst yDomain_d = derived([extents_d, _yDomain], calcDomain('y'));\\n\\tconst zDomain_d = derived([extents_d, _zDomain], calcDomain('z'));\\n\\tconst rDomain_d = derived([extents_d, _rDomain], calcDomain('r'));\\n\\n\\tconst xScale_d = derived([_xScale, extents_d, xDomain_d, _xPadding, _xNice, _xReverse, width_d, height_d, _xRange, _percentRange], createScale('x'));\\n\\tconst xGet_d = derived([_x, xScale_d], createGetter);\\n\\n\\tconst yScale_d = derived([_yScale, extents_d, yDomain_d, _yPadding, _yNice, _yReverse, width_d, height_d, _yRange, _percentRange], createScale('y'));\\n\\tconst yGet_d = derived([_y, yScale_d], createGetter);\\n\\n\\tconst zScale_d = derived([_zScale, extents_d, zDomain_d, _zPadding, _zNice, _zReverse, width_d, height_d, _zRange, _percentRange], createScale('z'));\\n\\tconst zGet_d = derived([_z, zScale_d], createGetter);\\n\\n\\tconst rScale_d = derived([_rScale, extents_d, rDomain_d, _rPadding, _rNice, _rReverse, width_d, height_d, _rRange, _percentRange], createScale('r'));\\n\\tconst rGet_d = derived([_r, rScale_d], createGetter);\\n\\n\\tconst xRange_d = derived([xScale_d], getRange);\\n\\tconst yRange_d = derived([yScale_d], getRange);\\n\\tconst zRange_d = derived([zScale_d], getRange);\\n\\tconst rRange_d = derived([rScale_d], getRange);\\n\\n\\tconst aspectRatio_d = derived([width_d, height_d], ([$aspectRatio, $width, $height]) => {\\n\\t\\treturn $width / $height;\\n\\t});\\n\\n\\t$: context = {\\n\\t\\tactiveGetters: activeGetters_d,\\n\\t\\twidth: width_d,\\n\\t\\theight: height_d,\\n\\t\\tpercentRange: _percentRange,\\n\\t\\taspectRatio: aspectRatio_d,\\n\\t\\tcontainerWidth: _containerWidth,\\n\\t\\tcontainerHeight: _containerHeight,\\n\\t\\tx: _x,\\n\\t\\ty: _y,\\n\\t\\tz: _z,\\n\\t\\tr: _r,\\n\\t\\tcustom: _custom,\\n\\t\\tdata: _data,\\n\\t\\txNice: _xNice,\\n\\t\\tyNice: _yNice,\\n\\t\\tzNice: _zNice,\\n\\t\\trNice: _rNice,\\n\\t\\txReverse: _xReverse,\\n\\t\\tyReverse: _yReverse,\\n\\t\\tzReverse: _zReverse,\\n\\t\\trReverse: _rReverse,\\n\\t\\txPadding: _xPadding,\\n\\t\\tyPadding: _yPadding,\\n\\t\\tzPadding: _zPadding,\\n\\t\\trPadding: _rPadding,\\n\\t\\tpadding: padding_d,\\n\\t\\tflatData: _flatData,\\n\\t\\textents: extents_d,\\n\\t\\txDomain: xDomain_d,\\n\\t\\tyDomain: yDomain_d,\\n\\t\\tzDomain: zDomain_d,\\n\\t\\trDomain: rDomain_d,\\n\\t\\txRange: xRange_d,\\n\\t\\tyRange: yRange_d,\\n\\t\\tzRange: zRange_d,\\n\\t\\trRange: rRange_d,\\n\\t\\tconfig: _config,\\n\\t\\txScale: xScale_d,\\n\\t\\txGet: xGet_d,\\n\\t\\tyScale: yScale_d,\\n\\t\\tyGet: yGet_d,\\n\\t\\tzScale: zScale_d,\\n\\t\\tzGet: zGet_d,\\n\\t\\trScale: rScale_d,\\n\\t\\trGet: rGet_d\\n\\t};\\n\\n\\t$: setContext('LayerCake', context);\\n</script>\\n\\n{#if (ssr === true || typeof window !== 'undefined')}\\n\\t<div\\n\\t\\tclass=\\\"layercake-container\\\"\\n\\t\\tstyle=\\\"\\n\\t\\t\\tposition:{position};\\n\\t\\t\\t{position === 'absolute' ? 'top:0;right:0;bottom:0;left:0;' : ''}\\n\\t\\t\\t{pointerEvents === false ? 'pointer-events:none;' : ''}\\n\\t\\t\\\"\\n\\t\\tbind:clientWidth={containerWidth}\\n\\t\\tbind:clientHeight={containerHeight}\\n\\t>\\n\\t\\t<slot\\n\\t\\t\\twidth={$width_d}\\n\\t\\t\\theight={$height_d}\\n\\t\\t\\taspectRatio={$aspectRatio_d}\\n\\t\\t\\tcontainerWidth={$_containerWidth}\\n\\t\\t\\tcontainerHeight={$_containerHeight}\\n\\t\\t></slot>\\n\\t</div>\\n{/if}\\n\\n<style>\\n\\t.layercake-container,\\n\\t.layercake-container :global(*) {\\n\\t\\tbox-sizing: border-box;\\n\\t}\\n\\t.layercake-container {\\n\\t\\twidth: 100%;\\n\\t\\theight: 100%;\\n\\t}\\n</style>\\n\"],\"names\":[],\"mappings\":\"AA2TC,kCAAoB,CACpB,kCAAoB,CAAC,AAAQ,CAAC,AAAE,CAAC,AAChC,UAAU,CAAE,UAAU,AACvB,CAAC,AACD,oBAAoB,cAAC,CAAC,AACrB,KAAK,CAAE,IAAI,CACX,MAAM,CAAE,IAAI,AACb,CAAC\"}"
 };
 
-const LayerCake = create_ssr_component(($$result, $$props, $$bindings, $$slots) => {
-	let $width_d;
-	let $height_d;
-	let $aspectRatio_d;
-	let $_containerWidth;
-	let $_containerHeight;
+const LayerCake = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+	let context;
+	let $width_d, $$unsubscribe_width_d;
+	let $height_d, $$unsubscribe_height_d;
+	let $aspectRatio_d, $$unsubscribe_aspectRatio_d;
+	let $_containerWidth, $$unsubscribe__containerWidth;
+	let $_containerHeight, $$unsubscribe__containerHeight;
 	let { ssr = false } = $$props;
 	let { pointerEvents = true } = $$props;
 	let { position = "relative" } = $$props;
@@ -1802,9 +1927,9 @@ const LayerCake = create_ssr_component(($$result, $$props, $$bindings, $$slots) 
 	const _percentRange = writable();
 
 	const _containerWidth = writable();
-	$_containerWidth = get_store_value(_containerWidth);
+	$$unsubscribe__containerWidth = subscribe(_containerWidth, value => $_containerWidth = value);
 	const _containerHeight = writable();
-	$_containerHeight = get_store_value(_containerHeight);
+	$$unsubscribe__containerHeight = subscribe(_containerHeight, value => $_containerHeight = value);
 	const _x = writable();
 	const _y = writable();
 	const _z = writable();
@@ -1882,13 +2007,13 @@ const LayerCake = create_ssr_component(($$result, $$props, $$bindings, $$slots) 
 		return $box.width;
 	});
 
-	$width_d = get_store_value(width_d);
+	$$unsubscribe_width_d = subscribe(width_d, value => $width_d = value);
 
 	const height_d = derived([box_d], ([$box]) => {
 		return $box.height;
 	});
 
-	$height_d = get_store_value(height_d);
+	$$unsubscribe_height_d = subscribe(height_d, value => $height_d = value);
 
 	/* --------------------------------------------
  * Calculate extents by taking the extent of the data
@@ -1986,7 +2111,7 @@ const LayerCake = create_ssr_component(($$result, $$props, $$bindings, $$slots) 
 		return $width / $height;
 	});
 
-	$aspectRatio_d = get_store_value(aspectRatio_d);
+	$$unsubscribe_aspectRatio_d = subscribe(aspectRatio_d, value => $aspectRatio_d = value);
 	if ($$props.ssr === void 0 && $$bindings.ssr && ssr !== void 0) $$bindings.ssr(ssr);
 	if ($$props.pointerEvents === void 0 && $$bindings.pointerEvents && pointerEvents !== void 0) $$bindings.pointerEvents(pointerEvents);
 	if ($$props.position === void 0 && $$bindings.position && position !== void 0) $$bindings.position(position);
@@ -2029,205 +2154,200 @@ const LayerCake = create_ssr_component(($$result, $$props, $$bindings, $$slots) 
 	if ($$props.extents === void 0 && $$bindings.extents && extents !== void 0) $$bindings.extents(extents);
 	if ($$props.flatData === void 0 && $$bindings.flatData && flatData !== void 0) $$bindings.flatData(flatData);
 	$$result.css.add(css);
-	$width_d = get_store_value(width_d);
-	$height_d = get_store_value(height_d);
-	$aspectRatio_d = get_store_value(aspectRatio_d);
-	$_containerWidth = get_store_value(_containerWidth);
-	$_containerHeight = get_store_value(_containerHeight);
 
-	 {
+	{
 		if (x) config.x = x;
 	}
 
-	 {
+	{
 		if (y) config.y = y;
 	}
 
-	 {
+	{
 		if (z) config.z = z;
 	}
 
-	 {
+	{
 		if (r) config.r = r;
 	}
 
-	 {
+	{
 		if (xDomain) config.xDomain = xDomain;
 	}
 
-	 {
+	{
 		if (yDomain) config.yDomain = yDomain;
 	}
 
-	 {
+	{
 		if (zDomain) config.zDomain = zDomain;
 	}
 
-	 {
+	{
 		if (rDomain) config.rDomain = rDomain;
 	}
 
-	 {
+	{
 		if (xRange) config.xRange = xRange;
 	}
 
-	 {
+	{
 		if (yRange) config.yRange = yRange;
 	}
 
-	 {
+	{
 		if (zRange) config.zRange = zRange;
 	}
 
-	 {
+	{
 		if (rRange) config.rRange = rRange;
 	}
 
-	 {
+	{
 		_percentRange.set(percentRange);
 	}
 
-	 {
+	{
 		_containerWidth.set(containerWidth);
 	}
 
-	 {
+	{
 		_containerHeight.set(containerHeight);
 	}
 
-	 {
+	{
 		_x.set(makeAccessor(x));
 	}
 
-	 {
+	{
 		_y.set(makeAccessor(y));
 	}
 
-	 {
+	{
 		_z.set(makeAccessor(z));
 	}
 
-	 {
+	{
 		_r.set(makeAccessor(r));
 	}
 
-	 {
+	{
 		_xDomain.set(xDomain);
 	}
 
-	 {
+	{
 		_yDomain.set(yDomain);
 	}
 
-	 {
+	{
 		_zDomain.set(zDomain);
 	}
 
-	 {
+	{
 		_rDomain.set(rDomain);
 	}
 
-	 {
+	{
 		_custom.set(custom);
 	}
 
-	 {
+	{
 		_data.set(data);
 	}
 
-	 {
+	{
 		_xNice.set(xNice);
 	}
 
-	 {
+	{
 		_yNice.set(yNice);
 	}
 
-	 {
+	{
 		_zNice.set(zNice);
 	}
 
-	 {
+	{
 		_rNice.set(rNice);
 	}
 
-	 {
+	{
 		_xReverse.set(xReverse);
 	}
 
-	 {
+	{
 		_yReverse.set(yReverse);
 	}
 
-	 {
+	{
 		_zReverse.set(zReverse);
 	}
 
-	 {
+	{
 		_rReverse.set(rReverse);
 	}
 
-	 {
+	{
 		_xPadding.set(xPadding);
 	}
 
-	 {
+	{
 		_yPadding.set(yPadding);
 	}
 
-	 {
+	{
 		_zPadding.set(zPadding);
 	}
 
-	 {
+	{
 		_rPadding.set(rPadding);
 	}
 
-	 {
+	{
 		_xScale.set(xScale);
 	}
 
-	 {
+	{
 		_yScale.set(yScale);
 	}
 
-	 {
+	{
 		_zScale.set(zScale);
 	}
 
-	 {
+	{
 		_rScale.set(rScale);
 	}
 
-	 {
+	{
 		_xRange.set(xRange);
 	}
 
-	 {
+	{
 		_yRange.set(yRange);
 	}
 
-	 {
+	{
 		_zRange.set(zRange);
 	}
 
-	 {
+	{
 		_rRange.set(rRange);
 	}
 
-	 {
+	{
 		_padding.set(padding);
 	}
 
-	 {
-		_extents.set(extents);
+	{
+		_extents.set(filterObject(extents));
 	}
 
-	 {
+	{
 		_flatData.set(flatData || data);
 	}
 
-	let context = {
+	context = {
 		activeGetters: activeGetters_d,
 		width: width_d,
 		height: height_d,
@@ -2275,15 +2395,21 @@ const LayerCake = create_ssr_component(($$result, $$props, $$bindings, $$slots) 
 		rGet: rGet_d
 	};
 
-	 {
+	{
 		setContext("LayerCake", context);
 	}
+
+	$$unsubscribe_width_d();
+	$$unsubscribe_height_d();
+	$$unsubscribe_aspectRatio_d();
+	$$unsubscribe__containerWidth();
+	$$unsubscribe__containerHeight();
 
 	return `${ssr === true || typeof window !== "undefined"
 	? `<div class="${"layercake-container svelte-vhzpsp"}" style="${"\n\t\t\tposition:" + escape(position) + ";\n\t\t\t" + escape(position === "absolute"
 		? "top:0;right:0;bottom:0;left:0;"
-		: "") + "\n\t\t\t" + escape(pointerEvents === false ? "pointer-events:none;" : "") + "\n\t\t"}">${$$slots.default
-		? $$slots.default({
+		: "") + "\n\t\t\t" + escape(pointerEvents === false ? "pointer-events:none;" : "") + "\n\t\t"}">${slots.default
+		? slots.default({
 				width: $width_d,
 				height: $height_d,
 				aspectRatio: $aspectRatio_d,
@@ -2294,223 +2420,107 @@ const LayerCake = create_ssr_component(($$result, $$props, $$bindings, $$slots) 
 	: ``}`;
 });
 
-/* node_modules/layercake/src/layouts/Svg.svelte generated by Svelte v3.23.2 */
+/* node_modules/layercake/src/layouts/ScaledSvg.svelte generated by Svelte v3.32.2 */
 
 const css$1 = {
-	code: "svg.svelte-u84d8d{position:absolute;top:0;left:0;overflow:visible}",
-	map: "{\"version\":3,\"file\":\"Svg.svelte\",\"sources\":[\"Svg.svelte\"],\"sourcesContent\":[\"<script>\\n\\timport { getContext } from 'svelte';\\n\\n\\texport let viewBox = undefined;\\n\\texport let zIndex = undefined;\\n\\texport let pointerEvents = undefined;\\n\\n\\tlet zIndexStyle = '';\\n\\t$: zIndexStyle = typeof zIndex !== 'undefined' ? `z-index:${zIndex};` : '';\\n\\n\\tlet pointerEventsStyle = '';\\n\\t$: pointerEventsStyle = pointerEvents === false ? 'pointer-events:none;' : '';\\n\\n\\tconst { containerWidth, containerHeight, padding } = getContext('LayerCake');\\n</script>\\n<svg\\n\\tclass=\\\"layercake-layout-svg\\\"\\n\\t{viewBox}\\n\\twidth={$containerWidth}\\n\\theight={$containerHeight}\\n\\tstyle=\\\"{zIndexStyle}{pointerEventsStyle}\\\"\\n>\\n\\t<defs>\\n\\t\\t<slot name=\\\"defs\\\"></slot>\\n\\t</defs>\\n\\t<g transform=\\\"translate({$padding.left}, {$padding.top})\\\">\\n\\t\\t<slot></slot>\\n\\t</g>\\n</svg>\\n\\n<style>\\n\\tsvg {\\n\\t\\tposition: absolute;\\n\\t\\ttop: 0;\\n\\t\\tleft: 0;\\n\\t\\toverflow: visible;\\n\\t}\\n</style>\\n\"],\"names\":[],\"mappings\":\"AA+BC,GAAG,cAAC,CAAC,AACJ,QAAQ,CAAE,QAAQ,CAClB,GAAG,CAAE,CAAC,CACN,IAAI,CAAE,CAAC,CACP,QAAQ,CAAE,OAAO,AAClB,CAAC\"}"
+	code: "svg.svelte-6sm8ei{position:absolute;width:100%;height:100%;overflow:visible}svg.svelte-6sm8ei *{vector-effect:non-scaling-stroke}",
+	map: "{\"version\":3,\"file\":\"ScaledSvg.svelte\",\"sources\":[\"ScaledSvg.svelte\"],\"sourcesContent\":[\"<script>\\n\\timport { getContext } from 'svelte';\\n\\n\\texport let fixedAspectRatio = 1;\\n\\texport let viewBox = `0 0 100 ${100 / fixedAspectRatio}`;\\n\\texport let zIndex = undefined;\\n\\texport let pointerEvents = undefined;\\n\\n\\tlet zIndexStyle = '';\\n\\t$: zIndexStyle = typeof zIndex !== 'undefined' ? `z-index:${zIndex};` : '';\\n\\n\\tlet pointerEventsStyle = '';\\n\\t$: pointerEventsStyle = pointerEvents === false ? 'pointer-events:none;' : '';\\n\\n\\tconst { padding } = getContext('LayerCake');\\n</script>\\n\\n<svg\\n\\t{viewBox}\\n\\tpreserveAspectRatio=\\\"none\\\"\\n\\tstyle=\\\"top: {$padding.top}px; right:0px; bottom:0px; left:{$padding.left}px;width:calc(100% - {($padding.left + $padding.right)}px);height:calc(100% - {($padding.top + $padding.bottom)}px);{zIndexStyle}{pointerEventsStyle}\\\"\\n>\\n\\t<defs>\\n\\t\\t<slot name=\\\"defs\\\"></slot>\\n\\t</defs>\\n\\n\\t<slot></slot>\\n</svg>\\n\\n<style>\\n\\tsvg {\\n\\t\\tposition: absolute;\\n\\t\\twidth: 100%;\\n\\t\\theight: 100%;\\n\\t\\toverflow: visible;\\n\\t}\\n\\tsvg :global(*) {\\n\\t\\tvector-effect: non-scaling-stroke;\\n\\t}\\n</style>\\n\"],\"names\":[],\"mappings\":\"AA8BC,GAAG,cAAC,CAAC,AACJ,QAAQ,CAAE,QAAQ,CAClB,KAAK,CAAE,IAAI,CACX,MAAM,CAAE,IAAI,CACZ,QAAQ,CAAE,OAAO,AAClB,CAAC,AACD,iBAAG,CAAC,AAAQ,CAAC,AAAE,CAAC,AACf,aAAa,CAAE,kBAAkB,AAClC,CAAC\"}"
 };
 
-const Svg = create_ssr_component(($$result, $$props, $$bindings, $$slots) => {
-	let $containerWidth;
-	let $containerHeight;
-	let $padding;
-	let { viewBox = undefined } = $$props;
+const ScaledSvg = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+	let $padding, $$unsubscribe_padding;
+	let { fixedAspectRatio = 1 } = $$props;
+	let { viewBox = `0 0 100 ${100 / fixedAspectRatio}` } = $$props;
 	let { zIndex = undefined } = $$props;
 	let { pointerEvents = undefined } = $$props;
 	let zIndexStyle = "";
 	let pointerEventsStyle = "";
-	const { containerWidth, containerHeight, padding } = getContext("LayerCake");
-	$containerWidth = get_store_value(containerWidth);
-	$containerHeight = get_store_value(containerHeight);
-	$padding = get_store_value(padding);
+	const { padding } = getContext("LayerCake");
+	$$unsubscribe_padding = subscribe(padding, value => $padding = value);
+	if ($$props.fixedAspectRatio === void 0 && $$bindings.fixedAspectRatio && fixedAspectRatio !== void 0) $$bindings.fixedAspectRatio(fixedAspectRatio);
 	if ($$props.viewBox === void 0 && $$bindings.viewBox && viewBox !== void 0) $$bindings.viewBox(viewBox);
 	if ($$props.zIndex === void 0 && $$bindings.zIndex && zIndex !== void 0) $$bindings.zIndex(zIndex);
 	if ($$props.pointerEvents === void 0 && $$bindings.pointerEvents && pointerEvents !== void 0) $$bindings.pointerEvents(pointerEvents);
 	$$result.css.add(css$1);
-	$containerWidth = get_store_value(containerWidth);
-	$containerHeight = get_store_value(containerHeight);
-	$padding = get_store_value(padding);
 
 	zIndexStyle = typeof zIndex !== "undefined"
 	? `z-index:${zIndex};`
 	: "";
 
 	pointerEventsStyle = pointerEvents === false ? "pointer-events:none;" : "";
-	return `<svg class="${"layercake-layout-svg svelte-u84d8d"}"${add_attribute("viewBox", viewBox, 0)}${add_attribute("width", $containerWidth, 0)}${add_attribute("height", $containerHeight, 0)} style="${escape(zIndexStyle) + escape(pointerEventsStyle)}"><defs>${$$slots.defs ? $$slots.defs({}) : ``}</defs><g transform="${"translate(" + escape($padding.left) + ", " + escape($padding.top) + ")"}">${$$slots.default ? $$slots.default({}) : ``}</g></svg>`;
+	$$unsubscribe_padding();
+	return `<svg${add_attribute("viewBox", viewBox, 0)} preserveAspectRatio="${"none"}" style="${"top: " + escape($padding.top) + "px; right:0px; bottom:0px; left:" + escape($padding.left) + "px;width:calc(100% - " + escape($padding.left + $padding.right) + "px);height:calc(100% - " + escape($padding.top + $padding.bottom) + "px);" + escape(zIndexStyle) + escape(pointerEventsStyle)}" class="${"svelte-6sm8ei"}"><defs>${slots.defs ? slots.defs({}) : ``}</defs>${slots.default ? slots.default({}) : ``}</svg>`;
 });
 
-/* src/components/Line.svelte generated by Svelte v3.23.2 */
+/* src/components/Line.svelte generated by Svelte v3.32.2 */
 
 const css$2 = {
 	code: ".path-line.svelte-1a99x5h{fill:none;stroke-linejoin:round;stroke-linecap:round;stroke-width:2}",
 	map: "{\"version\":3,\"file\":\"Line.svelte\",\"sources\":[\"Line.svelte\"],\"sourcesContent\":[\"<script>\\n\\timport { getContext } from 'svelte';\\n\\n\\tconst { data, xGet, yGet } = getContext('LayerCake');\\n\\n\\texport let stroke = '#ab00d6';\\n\\n\\t$: path = 'M' + $data\\n\\t\\t.map(d => {\\n\\t\\t\\treturn $xGet(d) + ',' + $yGet(d);\\n\\t\\t})\\n\\t\\t.join('L');\\n</script>\\n\\n<path class='path-line' d='{path}' {stroke}></path>\\n\\n<style>\\n\\t.path-line {\\n\\t\\tfill: none;\\n\\t\\tstroke-linejoin: round;\\n\\t\\tstroke-linecap: round;\\n\\t\\tstroke-width: 2;\\n\\t}\\n</style>\\n\\n\\n\"],\"names\":[],\"mappings\":\"AAiBC,UAAU,eAAC,CAAC,AACX,IAAI,CAAE,IAAI,CACV,eAAe,CAAE,KAAK,CACtB,cAAc,CAAE,KAAK,CACrB,YAAY,CAAE,CAAC,AAChB,CAAC\"}"
 };
 
-const Line = create_ssr_component(($$result, $$props, $$bindings, $$slots) => {
-	let $data;
-	let $xGet;
-	let $yGet;
+const Line = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+	let path;
+	let $data, $$unsubscribe_data;
+	let $xGet, $$unsubscribe_xGet;
+	let $yGet, $$unsubscribe_yGet;
 	const { data, xGet, yGet } = getContext("LayerCake");
-	$data = get_store_value(data);
-	$xGet = get_store_value(xGet);
-	$yGet = get_store_value(yGet);
+	$$unsubscribe_data = subscribe(data, value => $data = value);
+	$$unsubscribe_xGet = subscribe(xGet, value => $xGet = value);
+	$$unsubscribe_yGet = subscribe(yGet, value => $yGet = value);
 	let { stroke = "#ab00d6" } = $$props;
 	if ($$props.stroke === void 0 && $$bindings.stroke && stroke !== void 0) $$bindings.stroke(stroke);
 	$$result.css.add(css$2);
-	$data = get_store_value(data);
-	$xGet = get_store_value(xGet);
-	$yGet = get_store_value(yGet);
 
-	let path = "M" + $data.map(d => {
+	path = "M" + $data.map(d => {
 		return $xGet(d) + "," + $yGet(d);
 	}).join("L");
 
+	$$unsubscribe_data();
+	$$unsubscribe_xGet();
+	$$unsubscribe_yGet();
 	return `<path class="${"path-line svelte-1a99x5h"}"${add_attribute("d", path, 0)}${add_attribute("stroke", stroke, 0)}></path>`;
 });
 
-/* src/components/Area.svelte generated by Svelte v3.23.2 */
+/* src/components/Area.svelte generated by Svelte v3.32.2 */
 
-const Area = create_ssr_component(($$result, $$props, $$bindings, $$slots) => {
-	let $data;
-	let $xGet;
-	let $yGet;
-	let $yScale;
-	let $xScale;
-	let $extents;
+const Area = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+	let path;
+	let $data, $$unsubscribe_data;
+	let $xGet, $$unsubscribe_xGet;
+	let $yGet, $$unsubscribe_yGet;
+	let $yScale, $$unsubscribe_yScale;
+	let $xScale, $$unsubscribe_xScale;
+	let $extents, $$unsubscribe_extents;
 	const { data, xGet, yGet, xScale, yScale, extents } = getContext("LayerCake");
-	$data = get_store_value(data);
-	$xGet = get_store_value(xGet);
-	$yGet = get_store_value(yGet);
-	$xScale = get_store_value(xScale);
-	$yScale = get_store_value(yScale);
-	$extents = get_store_value(extents);
+	$$unsubscribe_data = subscribe(data, value => $data = value);
+	$$unsubscribe_xGet = subscribe(xGet, value => $xGet = value);
+	$$unsubscribe_yGet = subscribe(yGet, value => $yGet = value);
+	$$unsubscribe_xScale = subscribe(xScale, value => $xScale = value);
+	$$unsubscribe_yScale = subscribe(yScale, value => $yScale = value);
+	$$unsubscribe_extents = subscribe(extents, value => $extents = value);
 	let { fill = "#ab00d610" } = $$props;
 	let area;
 	if ($$props.fill === void 0 && $$bindings.fill && fill !== void 0) $$bindings.fill(fill);
-	$data = get_store_value(data);
-	$xGet = get_store_value(xGet);
-	$yGet = get_store_value(yGet);
-	$yScale = get_store_value(yScale);
-	$xScale = get_store_value(xScale);
-	$extents = get_store_value(extents);
 
-	let path = "M" + $data.map(d => {
+	path = "M" + $data.map(d => {
 		return $xGet(d) + "," + $yGet(d);
 	}).join("L");
 
-	 {
+	{
 		{
 			const yRange = $yScale.range();
 			area = path + ("L" + $xScale($extents.x[1]) + "," + yRange[0] + "L" + $xScale($extents.x[0]) + "," + yRange[0] + "Z");
 		}
 	}
 
+	$$unsubscribe_data();
+	$$unsubscribe_xGet();
+	$$unsubscribe_yGet();
+	$$unsubscribe_yScale();
+	$$unsubscribe_xScale();
+	$$unsubscribe_extents();
 	return `<path class="${"path-area"}"${add_attribute("d", area, 0)}${add_attribute("fill", fill, 0)}></path>`;
-});
-
-/* src/components/AxisX.svelte generated by Svelte v3.23.2 */
-
-const css$3 = {
-	code: ".tick.svelte-126ozqo.svelte-126ozqo{font-size:.725em;font-weight:200}line.svelte-126ozqo.svelte-126ozqo,.tick.svelte-126ozqo line.svelte-126ozqo{stroke:#aaa;stroke-dasharray:2}.tick.svelte-126ozqo text.svelte-126ozqo{fill:#666}.baseline.svelte-126ozqo.svelte-126ozqo{stroke-dasharray:0}",
-	map: "{\"version\":3,\"file\":\"AxisX.svelte\",\"sources\":[\"AxisX.svelte\"],\"sourcesContent\":[\"<script>\\n\\timport { getContext } from 'svelte';\\n\\n\\tconst { width, height, xScale, yScale, yRange } = getContext('LayerCake');\\n\\n\\texport let gridlines = true;\\n\\texport let formatTick = d => d;\\n\\texport let baseline = false;\\n\\texport let snapTicks = false;\\n\\texport let ticks = undefined;\\n\\texport let xTick = undefined;\\n\\texport let yTick = 16;\\n\\texport let dxTick = 0;\\n\\texport let dyTick = 0;\\n\\n\\t$: isBandwidth = typeof $xScale.bandwidth === 'function';\\n\\n\\t$: tickVals = Array.isArray(ticks) ? ticks :\\n\\t\\tisBandwidth ?\\n\\t\\t\\t$xScale.domain() :\\n\\t\\t\\t$xScale.ticks(ticks);\\n\\n\\tfunction textAnchor(i) {\\n\\t\\tif (snapTicks === true) {\\n\\t\\t\\tif (i === 0) {\\n\\t\\t\\t\\treturn 'start';\\n\\t\\t\\t}\\n\\t\\t\\tif (i === tickVals.length - 1) {\\n\\t\\t\\t\\treturn 'end';\\n\\t\\t\\t}\\n\\t\\t}\\n\\t\\treturn 'middle';\\n\\t}\\n</script>\\n\\n<g class='axis x-axis'>\\n\\t{#each tickVals as tick, i}\\n\\t\\t<g class='tick tick-{ tick }' transform='translate({$xScale(tick)},{$yRange[0]})'>\\n\\t\\t\\t{#if gridlines !== false}\\n\\t\\t\\t\\t<line y1='{$height * -1}' y2='0' x1='0' x2='0'></line>\\n\\t\\t\\t{/if}\\n\\t\\t\\t<text\\n\\t\\t\\t\\tx=\\\"{xTick || isBandwidth ? $xScale.bandwidth() / 2 : 0 }\\\"\\n\\t\\t\\t\\ty='{yTick}'\\n\\t\\t\\t\\tdx='{dxTick}'\\n\\t\\t\\t\\tdy='{dyTick}'\\n\\t\\t\\t\\ttext-anchor='{textAnchor(i)}'>{formatTick(tick)}</text>\\n\\t\\t</g>\\n\\t{/each}\\n\\t{#if baseline === true}\\n\\t\\t<line class=\\\"baseline\\\" y1='{$height + 0.5}' y2='{$height + 0.5}' x1='0' x2='{$width}'></line>\\n\\t{/if}\\n</g>\\n\\n<style>\\n\\t.tick {\\n\\t\\tfont-size: .725em;\\n\\t\\tfont-weight: 200;\\n\\t}\\n\\n\\tline,\\n\\t.tick line {\\n\\t\\tstroke: #aaa;\\n\\t\\tstroke-dasharray: 2;\\n\\t}\\n\\n\\t.tick text {\\n\\t\\tfill: #666;\\n\\t}\\n\\n\\t.baseline {\\n\\t\\tstroke-dasharray: 0;\\n\\t}\\n</style>\\n\"],\"names\":[],\"mappings\":\"AAuDC,KAAK,8BAAC,CAAC,AACN,SAAS,CAAE,MAAM,CACjB,WAAW,CAAE,GAAG,AACjB,CAAC,AAED,kCAAI,CACJ,oBAAK,CAAC,IAAI,eAAC,CAAC,AACX,MAAM,CAAE,IAAI,CACZ,gBAAgB,CAAE,CAAC,AACpB,CAAC,AAED,oBAAK,CAAC,IAAI,eAAC,CAAC,AACX,IAAI,CAAE,IAAI,AACX,CAAC,AAED,SAAS,8BAAC,CAAC,AACV,gBAAgB,CAAE,CAAC,AACpB,CAAC\"}"
-};
-
-const AxisX = create_ssr_component(($$result, $$props, $$bindings, $$slots) => {
-	let $xScale;
-	let $yRange;
-	let $height;
-	let $width;
-	const { width, height, xScale, yScale, yRange } = getContext("LayerCake");
-	$width = get_store_value(width);
-	$height = get_store_value(height);
-	$xScale = get_store_value(xScale);
-	$yRange = get_store_value(yRange);
-	let { gridlines = true } = $$props;
-	let { formatTick = d => d } = $$props;
-	let { baseline = false } = $$props;
-	let { snapTicks = false } = $$props;
-	let { ticks = undefined } = $$props;
-	let { xTick = undefined } = $$props;
-	let { yTick = 16 } = $$props;
-	let { dxTick = 0 } = $$props;
-	let { dyTick = 0 } = $$props;
-
-	function textAnchor(i) {
-		if (snapTicks === true) {
-			if (i === 0) {
-				return "start";
-			}
-
-			if (i === tickVals.length - 1) {
-				return "end";
-			}
-		}
-
-		return "middle";
-	}
-
-	if ($$props.gridlines === void 0 && $$bindings.gridlines && gridlines !== void 0) $$bindings.gridlines(gridlines);
-	if ($$props.formatTick === void 0 && $$bindings.formatTick && formatTick !== void 0) $$bindings.formatTick(formatTick);
-	if ($$props.baseline === void 0 && $$bindings.baseline && baseline !== void 0) $$bindings.baseline(baseline);
-	if ($$props.snapTicks === void 0 && $$bindings.snapTicks && snapTicks !== void 0) $$bindings.snapTicks(snapTicks);
-	if ($$props.ticks === void 0 && $$bindings.ticks && ticks !== void 0) $$bindings.ticks(ticks);
-	if ($$props.xTick === void 0 && $$bindings.xTick && xTick !== void 0) $$bindings.xTick(xTick);
-	if ($$props.yTick === void 0 && $$bindings.yTick && yTick !== void 0) $$bindings.yTick(yTick);
-	if ($$props.dxTick === void 0 && $$bindings.dxTick && dxTick !== void 0) $$bindings.dxTick(dxTick);
-	if ($$props.dyTick === void 0 && $$bindings.dyTick && dyTick !== void 0) $$bindings.dyTick(dyTick);
-	$$result.css.add(css$3);
-	$xScale = get_store_value(xScale);
-	$yRange = get_store_value(yRange);
-	$height = get_store_value(height);
-	$width = get_store_value(width);
-	let isBandwidth = typeof $xScale.bandwidth === "function";
-
-	let tickVals = Array.isArray(ticks)
-	? ticks
-	: isBandwidth ? $xScale.domain() : $xScale.ticks(ticks);
-
-	return `<g class="${"axis x-axis"}">${each(tickVals, (tick, i) => `<g class="${"tick tick-" + escape(tick) + " svelte-126ozqo"}" transform="${"translate(" + escape($xScale(tick)) + "," + escape($yRange[0]) + ")"}">${gridlines !== false
-	? `<line${add_attribute("y1", $height * -1, 0)} y2="${"0"}" x1="${"0"}" x2="${"0"}" class="${"svelte-126ozqo"}"></line>`
-	: ``}<text${add_attribute("x", xTick || isBandwidth ? $xScale.bandwidth() / 2 : 0, 0)}${add_attribute("y", yTick, 0)}${add_attribute("dx", dxTick, 0)}${add_attribute("dy", dyTick, 0)}${add_attribute("text-anchor", textAnchor(i), 0)} class="${"svelte-126ozqo"}">${escape(formatTick(tick))}</text></g>`)}${baseline === true
-	? `<line class="${"baseline svelte-126ozqo"}"${add_attribute("y1", $height + 0.5, 0)}${add_attribute("y2", $height + 0.5, 0)} x1="${"0"}"${add_attribute("x2", $width, 0)}></line>`
-	: ``}</g>`;
-});
-
-/* src/components/AxisY.svelte generated by Svelte v3.23.2 */
-
-const css$4 = {
-	code: ".tick.svelte-tul7ef.svelte-tul7ef{font-size:.725em;font-weight:200}.tick.svelte-tul7ef line.svelte-tul7ef{stroke:#aaa;stroke-dasharray:2}.tick.svelte-tul7ef text.svelte-tul7ef{fill:#666}.tick.tick-0.svelte-tul7ef line.svelte-tul7ef{stroke-dasharray:0}",
-	map: "{\"version\":3,\"file\":\"AxisY.svelte\",\"sources\":[\"AxisY.svelte\"],\"sourcesContent\":[\"<script>\\n\\timport { getContext } from 'svelte';\\n\\n\\tconst { padding, xRange, xScale, yScale } = getContext('LayerCake');\\n\\n\\texport let ticks = 4;\\n\\texport let gridlines = true;\\n\\texport let formatTick = d => d;\\n\\texport let xTick = 0;\\n\\texport let yTick = 0;\\n\\texport let dxTick = 0;\\n\\texport let dyTick = -4;\\n\\texport let textAnchor = 'start';\\n\\n\\t$: isBandwidth = typeof $yScale.bandwidth === 'function';\\n\\n\\t$: tickVals = Array.isArray(ticks) ? ticks :\\n\\t\\tisBandwidth ?\\n\\t\\t\\t$yScale.domain() :\\n\\t\\t\\t$yScale.ticks(ticks);\\n</script>\\n\\n<g class='axis y-axis' transform='translate({-$padding.left}, 0)'>\\n\\t{#each tickVals as tick, i}\\n\\t\\t<g class='tick tick-{tick}' transform='translate({$xRange[0] + (isBandwidth ? $padding.left : 0)}, {$yScale(tick)})'>\\n\\t\\t\\t{#if gridlines !== false}\\n\\t\\t\\t\\t<line\\n\\t\\t\\t\\t\\tx2='100%'\\n\\t\\t\\t\\t\\ty1={yTick + (isBandwidth ? ($yScale.bandwidth() / 2) : 0)}\\n\\t\\t\\t\\t\\ty2={yTick + (isBandwidth ? ($yScale.bandwidth() / 2) : 0)}\\n\\t\\t\\t\\t></line>\\n\\t\\t\\t{/if}\\n\\t\\t\\t<text\\n\\t\\t\\t\\tx='{xTick}'\\n\\t\\t\\t\\ty='{yTick + (isBandwidth ? $yScale.bandwidth() / 2 : 0)}'\\n\\t\\t\\t\\tdx='{isBandwidth ? -5 : dxTick}'\\n\\t\\t\\t\\tdy='{isBandwidth ? 4 : dyTick}'\\n\\t\\t\\t\\tstyle=\\\"text-anchor:{isBandwidth ? 'end' : textAnchor};\\\"\\n\\t\\t\\t>{formatTick(tick)}</text>\\n\\t\\t</g>\\n\\t{/each}\\n</g>\\n\\n<style>\\n\\t.tick {\\n\\t\\tfont-size: .725em;\\n\\t\\tfont-weight: 200;\\n\\t}\\n\\n\\t.tick line {\\n\\t\\tstroke: #aaa;\\n\\t\\tstroke-dasharray: 2;\\n\\t}\\n\\n\\t.tick text {\\n\\t\\tfill: #666;\\n\\t}\\n\\n\\t.tick.tick-0 line {\\n\\t\\tstroke-dasharray: 0;\\n\\t}\\n</style>\\n\"],\"names\":[],\"mappings\":\"AA4CC,KAAK,4BAAC,CAAC,AACN,SAAS,CAAE,MAAM,CACjB,WAAW,CAAE,GAAG,AACjB,CAAC,AAED,mBAAK,CAAC,IAAI,cAAC,CAAC,AACX,MAAM,CAAE,IAAI,CACZ,gBAAgB,CAAE,CAAC,AACpB,CAAC,AAED,mBAAK,CAAC,IAAI,cAAC,CAAC,AACX,IAAI,CAAE,IAAI,AACX,CAAC,AAED,KAAK,qBAAO,CAAC,IAAI,cAAC,CAAC,AAClB,gBAAgB,CAAE,CAAC,AACpB,CAAC\"}"
-};
-
-const AxisY = create_ssr_component(($$result, $$props, $$bindings, $$slots) => {
-	let $yScale;
-	let $padding;
-	let $xRange;
-	const { padding, xRange, xScale, yScale } = getContext("LayerCake");
-	$padding = get_store_value(padding);
-	$xRange = get_store_value(xRange);
-	$yScale = get_store_value(yScale);
-	let { ticks = 4 } = $$props;
-	let { gridlines = true } = $$props;
-	let { formatTick = d => d } = $$props;
-	let { xTick = 0 } = $$props;
-	let { yTick = 0 } = $$props;
-	let { dxTick = 0 } = $$props;
-	let { dyTick = -4 } = $$props;
-	let { textAnchor = "start" } = $$props;
-	if ($$props.ticks === void 0 && $$bindings.ticks && ticks !== void 0) $$bindings.ticks(ticks);
-	if ($$props.gridlines === void 0 && $$bindings.gridlines && gridlines !== void 0) $$bindings.gridlines(gridlines);
-	if ($$props.formatTick === void 0 && $$bindings.formatTick && formatTick !== void 0) $$bindings.formatTick(formatTick);
-	if ($$props.xTick === void 0 && $$bindings.xTick && xTick !== void 0) $$bindings.xTick(xTick);
-	if ($$props.yTick === void 0 && $$bindings.yTick && yTick !== void 0) $$bindings.yTick(yTick);
-	if ($$props.dxTick === void 0 && $$bindings.dxTick && dxTick !== void 0) $$bindings.dxTick(dxTick);
-	if ($$props.dyTick === void 0 && $$bindings.dyTick && dyTick !== void 0) $$bindings.dyTick(dyTick);
-	if ($$props.textAnchor === void 0 && $$bindings.textAnchor && textAnchor !== void 0) $$bindings.textAnchor(textAnchor);
-	$$result.css.add(css$4);
-	$yScale = get_store_value(yScale);
-	$padding = get_store_value(padding);
-	$xRange = get_store_value(xRange);
-	let isBandwidth = typeof $yScale.bandwidth === "function";
-
-	let tickVals = Array.isArray(ticks)
-	? ticks
-	: isBandwidth ? $yScale.domain() : $yScale.ticks(ticks);
-
-	return `<g class="${"axis y-axis"}" transform="${"translate(" + escape(-$padding.left) + ", 0)"}">${each(tickVals, (tick, i) => `<g class="${"tick tick-" + escape(tick) + " svelte-tul7ef"}" transform="${"translate(" + escape($xRange[0] + (isBandwidth ? $padding.left : 0)) + ", " + escape($yScale(tick)) + ")"}">${gridlines !== false
-	? `<line x2="${"100%"}"${add_attribute("y1", yTick + (isBandwidth ? $yScale.bandwidth() / 2 : 0), 0)}${add_attribute("y2", yTick + (isBandwidth ? $yScale.bandwidth() / 2 : 0), 0)} class="${"svelte-tul7ef"}"></line>`
-	: ``}<text${add_attribute("x", xTick, 0)}${add_attribute("y", yTick + (isBandwidth ? $yScale.bandwidth() / 2 : 0), 0)}${add_attribute("dx", isBandwidth ? -5 : dxTick, 0)}${add_attribute("dy", isBandwidth ? 4 : dyTick, 0)} style="${"text-anchor:" + escape(isBandwidth ? "end" : textAnchor) + ";"}" class="${"svelte-tul7ef"}">${escape(formatTick(tick))}</text></g>`)}</g>`;
 });
 
 var points = [ { myX:"1979",
@@ -2590,26 +2600,28 @@ var points = [ { myX:"1979",
   { myX:"2016",
     myY:"4.72" } ];
 
-/* src/App.svelte generated by Svelte v3.23.2 */
+/* src/App.svelte generated by Svelte v3.32.2 */
 
-const css$5 = {
+const css$3 = {
 	code: ".chart-container.svelte-ivcd9i{width:100%;height:100%}",
-	map: "{\"version\":3,\"file\":\"App.svelte\",\"sources\":[\"App.svelte\"],\"sourcesContent\":[\"<script>\\n\\timport { LayerCake, Svg } from 'layercake';\\n\\n\\timport Line from './components/Line.svelte';\\n\\timport Area from './components/Area.svelte';\\n\\timport AxisX from './components/AxisX.svelte';\\n\\timport AxisY from './components/AxisY.svelte';\\n\\n\\timport points from './data/points.csv';\\n\\n\\tconst xKey = 'myX';\\n\\tconst yKey = 'myY';\\n\\n\\tpoints.forEach(row => {\\n\\t\\trow[yKey] = +row[yKey];\\n\\t});\\n</script>\\n\\n<style>\\n\\t.chart-container {\\n\\t\\twidth: 100%;\\n\\t\\theight: 100%;\\n\\t}\\n</style>\\n\\n<div class=\\\"chart-container\\\">\\n\\t<LayerCake\\n\\t\\tpadding={{ right: 10, bottom: 20, left: 25 }}\\n\\t\\tx={xKey}\\n\\t\\ty={yKey}\\n\\t\\tyDomain={[0, null]}\\n\\t\\tdata={points}\\n\\t>\\n\\t\\t<Svg>\\n\\t\\t\\t<AxisX/>\\n\\t\\t\\t<AxisY/>\\n\\t\\t\\t<Line/>\\n\\t\\t\\t<Area/>\\n\\t\\t</Svg>\\n\\t</LayerCake>\\n</div>\\n\"],\"names\":[],\"mappings\":\"AAmBC,gBAAgB,cAAC,CAAC,AACjB,KAAK,CAAE,IAAI,CACX,MAAM,CAAE,IAAI,AACb,CAAC\"}"
+	map: "{\"version\":3,\"file\":\"App.svelte\",\"sources\":[\"App.svelte\"],\"sourcesContent\":[\"<script>\\n\\timport { LayerCake, ScaledSvg } from 'layercake';\\n\\n\\timport Line from './components/Line.svelte';\\n\\timport Area from './components/Area.svelte';\\n\\timport AxisX from './components/AxisX.svelte';\\n\\timport AxisY from './components/AxisY.svelte';\\n\\n\\timport points from './data/points.csv';\\n\\n\\tconst xKey = 'myX';\\n\\tconst yKey = 'myY';\\n\\n\\tpoints.forEach(row => {\\n\\t\\trow[yKey] = +row[yKey];\\n\\t});\\n</script>\\n\\n<style>\\n\\t.chart-container {\\n\\t\\twidth: 100%;\\n\\t\\theight: 100%;\\n\\t}\\n</style>\\n\\n<div class=\\\"chart-container\\\">\\n\\t<LayerCake\\n\\tssr={true}\\n\\tpercentRange={true}\\n\\t\\tpadding={{ right: 10, bottom: 20, left: 25 }}\\n\\t\\tx={xKey}\\n\\t\\ty={yKey}\\n\\t\\tyDomain={[0, null]}\\n\\t\\tdata={points}\\n\\t>\\n\\t\\t<ScaledSvg>\\n\\t\\t\\t<!-- <AxisX/>\\n\\t\\t\\t<AxisY/> -->\\n\\t\\t\\t<Line/>\\n\\t\\t\\t<Area/>\\n\\t\\t</ScaledSvg>\\n\\t</LayerCake>\\n</div>\\n\"],\"names\":[],\"mappings\":\"AAmBC,gBAAgB,cAAC,CAAC,AACjB,KAAK,CAAE,IAAI,CACX,MAAM,CAAE,IAAI,AACb,CAAC\"}"
 };
 
 const xKey = "myX";
 const yKey = "myY";
 
-const App = create_ssr_component(($$result, $$props, $$bindings, $$slots) => {
+const App = create_ssr_component(($$result, $$props, $$bindings, slots) => {
 	points.forEach(row => {
 		row[yKey] = +row[yKey];
 	});
 
-	$$result.css.add(css$5);
+	$$result.css.add(css$3);
 
 	return `<div class="${"chart-container svelte-ivcd9i"}">${validate_component(LayerCake, "LayerCake").$$render(
 		$$result,
 		{
+			ssr: true,
+			percentRange: true,
 			padding: { right: 10, bottom: 20, left: 25 },
 			x: xKey,
 			y: yKey,
@@ -2618,9 +2630,8 @@ const App = create_ssr_component(($$result, $$props, $$bindings, $$slots) => {
 		},
 		{},
 		{
-			default: () => `${validate_component(Svg, "Svg").$$render($$result, {}, {}, {
-				default: () => `${validate_component(AxisX, "AxisX").$$render($$result, {}, {}, {})}
-			${validate_component(AxisY, "AxisY").$$render($$result, {}, {}, {})}
+			default: () => `${validate_component(ScaledSvg, "ScaledSvg").$$render($$result, {}, {}, {
+				default: () => `
 			${validate_component(Line, "Line").$$render($$result, {}, {}, {})}
 			${validate_component(Area, "Area").$$render($$result, {}, {}, {})}`
 			})}`
