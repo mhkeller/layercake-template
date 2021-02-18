@@ -3,7 +3,7 @@
 	import { geoPath } from 'd3-geo';
 	import { raise } from 'layercake';
 
-	const { data, width, height } = getContext('LayerCake');
+	const { data, width, height, zGet } = getContext('LayerCake');
 
 	/* --------------------------------------------
 	 * Require a D3 projection function
@@ -33,12 +33,6 @@
 
 	$: geoPathFn = geoPath(projectionFn);
 
-	function fillRandom(random) {
-		const colors = ['#ffdecc', '#ffc09c', '#ffa06b', '#ff7a33'];
-		const index = Math.round(random * (colors.length - 1));
-		return colors[index];
-	}
-
 	function handleMousemove(feature) {
 		return function handleMousemoveFn(e) {
 			raise(this);
@@ -57,7 +51,7 @@
 	{#each features as feature}
 		<path
 			class="feature-path"
-			fill="{fillRandom(Math.random())}"
+			fill="{$zGet(feature.properties)}"
 			d="{geoPathFn(feature)}"
 			on:mouseover={(e) => dispatch('mousemove', { e, props: feature.properties })}
 			on:mousemove={handleMousemove(feature)}
