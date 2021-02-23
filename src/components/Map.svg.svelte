@@ -16,6 +16,13 @@
 	export let fixedAspectRatio = undefined;
 
 	/* --------------------------------------------
+	 * Allow for custom styling
+	 */
+	export let fill = undefined; // The fill will be determined by the scale, unless this prop is set
+	export let stroke = '#333';
+	export let strokeWidth = 0.5;
+
+	/* --------------------------------------------
 	 * Add this optional export in case you want to plot only a subset of the features
 	 * while keeping the zoom on the whole geojson feature set
 	 */
@@ -51,7 +58,9 @@
 	{#each features as feature}
 		<path
 			class="feature-path"
-			fill="{$zGet(feature.properties)}"
+			fill="{fill || $zGet(feature.properties)}"
+			stroke={stroke}
+			stroke-width={strokeWidth}
 			d="{geoPathFn(feature)}"
 			on:mouseover={(e) => dispatch('mousemove', { e, props: feature.properties })}
 			on:mousemove={handleMousemove(feature)}
@@ -60,10 +69,10 @@
 </g>
 
 <style>
-	.feature-path {
+	/* .feature-path {
 		stroke: #333;
 		stroke-width: 0.5px;
-	}
+	} */
 	.feature-path:hover {
 		stroke: #000;
 		stroke-width: 2px;
