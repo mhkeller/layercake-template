@@ -13,6 +13,8 @@
   export let fill = '#fff';
 	export let stroke = '#999';
 	export let textColor = '#333';
+	export let textStroke = 0;
+	export let textStrokeColor = '#000';
 	export let sortBy = (a, b) => b.value - a.value; // 'depth' is also a popular choice
 
   export let circlePadding = 0;
@@ -71,7 +73,16 @@
 			/>
 				<div
 					class="text-group"
-					style="color:{textColor};left:{d.x}px;top:{d.y - (labelVisibilityThreshold(d.r) ? 0 : (d.r + 4))}px;"
+					style="
+						color:{textColor};
+						text-shadow:
+							-{textStroke}px -{textStroke}px 0 {textStrokeColor},
+							{textStroke}px -{textStroke}px 0 {textStrokeColor},
+							-{textStroke}px {textStroke}px 0 {textStrokeColor},
+							{textStroke}px {textStroke}px 0 {textStrokeColor};
+						left:{d.x}px;
+						top:{d.y - (labelVisibilityThreshold(d.r) ? 0 : (d.r + 4))}px;
+					"
 				>
 					<div class="text">{titleCase(d.data.id)}</div>
 					{#if d.data.data[valueKey]}
