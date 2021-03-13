@@ -38,8 +38,8 @@
 		<div
 			class='bee'
 			style='
-				left:{node.x}%;
-				top: {node.y}%;
+				left:{node.x}px;
+				top: {node.y}px;
 				width: {radius * 2}px;
 				height: {radius * 2}px;
 				background: {$zGet(node)};
@@ -55,5 +55,6 @@
 		position: absolute;
 		border-style: solid;
 		border-radius: 50%;
+		transform: translate(-50%, -50%);
 	}
 </style>
