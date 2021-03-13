@@ -16,8 +16,8 @@
 	$: {
 		const yRange = $yScale.range();
 		area = path + (
-			'L' + $xScale($extents.x[1]) + ',' + yRange[0] +
-			'L' + $xScale($extents.x[0]) + ',' + yRange[0] +
+			'L' + $xScale($extents.x ? $extents.x[1] : 0) + ',' + yRange[0] +
+			'L' + $xScale($extents.x ? $extents.x[0] : 0) + ',' + yRange[0] +
 			'Z'
 		);
 	}

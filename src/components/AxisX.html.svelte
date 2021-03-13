@@ -16,7 +16,9 @@
 	$: tickVals = Array.isArray(ticks) ? ticks :
 		isBandwidth ?
 			$xScale.domain() :
-			$xScale.ticks(ticks);
+			typeof ticks === 'function' ?
+				ticks($xScale.ticks()) :
+					$xScale.ticks(ticks);
 </script>
 
 <div class='axis x-axis' class:snapTicks>
