@@ -7,14 +7,31 @@
 	export let shape = 'square';
 
 	/* --------------------------------------------
+	 * Can be "start", "center" or "end"
+	 */
+	export let align = 'start';
+
+	/* --------------------------------------------
+	 * Pass in lookup values
+	 */
+	export let lookup = undefined;
+
+	/* --------------------------------------------
 	 * Capitalize the series name: `true` or `false`
 	 */
 	export let capitalize = true;
 
 	const { zDomain, zScale } = getContext('LayerCake');
 
-	function cap (str) {
-		return String(str).replace(/^\w/, d => d.toUpperCase());
+	function cap (val) {
+		return String(val).replace(/^\w/, d => d.toUpperCase());
+	}
+
+	function displayName (val) {
+		if (lookup) {
+			return lookup[val] || val;
+		}
+		return capitalize === true ? cap(val) : val;
 	}
 </script>
 
@@ -49,7 +66,7 @@
 	}
 </style>
 
-<div class='key'>
+<div class='key' style="justify-content: {align}">
 	{#each $zDomain as item}
 	<div class='key-item'>
 		<div
@@ -59,7 +76,7 @@
 				`linear-gradient(-45deg, #ffffff 40%, ${$zScale(item)} 41%, ${$zScale(item)} 59%, #ffffff 60%)`
 				: $zScale(item)};'
 		></div>
-		<div class='name'>{capitalize === true ? cap(item) : item}</div>
+		<div class='name'>{displayName(item)}</div>
 	</div>
 	{/each}
 </div>

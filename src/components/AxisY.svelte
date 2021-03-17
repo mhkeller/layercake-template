@@ -1,9 +1,10 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { padding, xRange, xScale, yScale } = getContext('LayerCake');
+	const { padding, xRange, yScale } = getContext('LayerCake');
 
 	export let ticks = 4;
+	export let tickMarks = false;
 	export let gridlines = true;
 	export let formatTick = d => d;
 	export let xTick = 0;
@@ -27,7 +28,17 @@
 		<g class='tick tick-{tick}' transform='translate({$xRange[0] + (isBandwidth ? $padding.left : 0)}, {$yScale(tick)})'>
 			{#if gridlines !== false}
 				<line
+					class="gridline"
 					x2='100%'
+					y1={yTick + (isBandwidth ? ($yScale.bandwidth() / 2) : 0)}
+					y2={yTick + (isBandwidth ? ($yScale.bandwidth() / 2) : 0)}
+				></line>
+			{/if}
+			{#if tickMarks === true}
+				<line
+					class='tick-mark'
+					x1='0'
+					x2='{isBandwidth ? -6 : 6}'
 					y1={yTick + (isBandwidth ? ($yScale.bandwidth() / 2) : 0)}
 					y2={yTick + (isBandwidth ? ($yScale.bandwidth() / 2) : 0)}
 				></line>
@@ -35,7 +46,7 @@
 			<text
 				x='{xTick}'
 				y='{yTick + (isBandwidth ? $yScale.bandwidth() / 2 : 0)}'
-				dx='{isBandwidth ? -5 : dxTick}'
+				dx='{isBandwidth ? -9 : dxTick}'
 				dy='{isBandwidth ? 4 : dyTick}'
 				style="text-anchor:{isBandwidth ? 'end' : textAnchor};"
 			>{formatTick(tick)}</text>
@@ -51,6 +62,8 @@
 
 	.tick line {
 		stroke: #aaa;
+	}
+	.tick .gridline {
 		stroke-dasharray: 2;
 	}
 

@@ -1,9 +1,10 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { width, height, xScale, yScale, padding } = getContext('LayerCake');
+	const { xScale, padding } = getContext('LayerCake');
 
 	export let gridlines = true;
+	export let tickMarks = false;
 	export let formatTick = d => d;
 	export let baseline = false;
 	export let snapTicks = false;
@@ -26,6 +27,9 @@
 		{#if gridlines !== false}
 			<div class="gridline" style='left:{$xScale(tick)}%;top: -{$padding.top}px;bottom: 0;'></div>
 		{/if}
+		{#if tickMarks === true}
+			<div class="tick-mark" style='left:{$xScale(tick) + (isBandwidth ? $xScale.bandwidth() / 2 : 0)}%;height:6px;bottom: -6px;'></div>
+		{/if}
 		<div
 			class='tick tick-{ i }'
 			style='left:{$xScale(tick) + (isBandwidth ? $xScale.bandwidth() / 2 : 0)}%;top:100%;'>
@@ -42,6 +46,7 @@
 <style>
 	.axis,
 	.tick,
+	.tick-mark,
 	.gridline,
 	.baseline {
 		position: absolute;
@@ -59,6 +64,9 @@
 		border-left: 1px dashed #aaa;
 	}
 
+	.tick-mark {
+		border-left: 1px solid #aaa;
+	}
 	.baseline {
 		border-top: 1px solid #aaa;
 	}
@@ -69,10 +77,11 @@
 		white-space: nowrap;
 		transform: translateX(-50%);
 	}
+	/* This looks a little better at 40 percent than 50 */
 	.axis.snapTicks .tick:last-child {
-		transform: translateX(-50%);
+		transform: translateX(-40%);
 	}
-	.axis.snapTicks .tick:first-child {
-		transform: translateX(50%);
+	.axis.snapTicks .tick.tick-0 {
+		transform: translateX(40%);
 	}
 </style>

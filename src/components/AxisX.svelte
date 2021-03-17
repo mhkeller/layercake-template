@@ -1,9 +1,10 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { width, height, xScale, yScale, yRange } = getContext('LayerCake');
+	const { width, height, xScale, yRange } = getContext('LayerCake');
 
 	export let gridlines = true;
+	export let tickMarks = false;
 	export let formatTick = d => d;
 	export let baseline = false;
 	export let snapTicks = false;
@@ -35,14 +36,17 @@
 	}
 </script>
 
-<g class='axis x-axis'>
+<g class='axis x-axis' class:snapTicks>
 	{#each tickVals as tick, i}
-		<g class='tick tick-{ tick }' transform='translate({$xScale(tick)},{$yRange[0]})'>
+		<g class='tick tick-{ i }' transform='translate({$xScale(tick)},{$yRange[0]})'>
 			{#if gridlines !== false}
-				<line y1='{$height * -1}' y2='0' x1='0' x2='0'></line>
+				<line class="gridline" y1='{$height * -1}' y2='0' x1='0' x2='0'></line>
+			{/if}
+			{#if tickMarks === true}
+				<line class="tick-mark" y1='{0}' y2='{6}' x1='{xTick || isBandwidth ? $xScale.bandwidth() / 2 : 0}' x2='{xTick || isBandwidth ? $xScale.bandwidth() / 2 : 0}'></line>
 			{/if}
 			<text
-				x="{xTick || isBandwidth ? $xScale.bandwidth() / 2 : 0 }"
+				x="{xTick || isBandwidth ? $xScale.bandwidth() / 2 : 0}"
 				y='{yTick}'
 				dx='{dxTick}'
 				dy='{dyTick}'
@@ -70,7 +74,15 @@
 		fill: #666;
 	}
 
+	.tick .tick-mark,
 	.baseline {
 		stroke-dasharray: 0;
+	}
+	/* This looks slightly better */
+	.axis.snapTicks .tick:last-child text {
+		transform: translateX(3px);
+	}
+	.axis.snapTicks .tick.tick-0 text {
+		transform: translateX(-3px);
 	}
 </style>

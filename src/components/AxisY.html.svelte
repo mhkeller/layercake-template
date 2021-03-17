@@ -1,9 +1,10 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { padding, xRange, xScale, yScale } = getContext('LayerCake');
+	const { padding, xRange, yScale } = getContext('LayerCake');
 
 	export let ticks = 4;
+	export let tickMarks = false;
 	export let gridlines = true;
 	export let baseline = false;
 	export let formatTick = d => d;
@@ -32,11 +33,14 @@
 			{#if baseline !== false && i === 0}
 				<div class="gridline baseline" style='top:0;left:{isBandwidth ? $padding.left : 0};right:-{$padding.left + $padding.right}px;'></div>
 			{/if}
+			{#if tickMarks === true}
+				<div class="tick-mark" style='top:0;left:{isBandwidth ? $padding.left - 6 : 0}px;width:6px;'></div>
+			{/if}
 			<div
 				class="text"
 				style='
 					top:{yTick - 3}px;
-					left:{isBandwidth ? ($padding.left + xTick) : 0}px;
+					left:{isBandwidth ? ($padding.left + xTick - 4) : 0}px;
 					transform: translate({isBandwidth ? '-100%' : 0}, {isBandwidth ? -50 - Math.floor($yScale.bandwidth() / -2) : '-100'}%);
 				'
 			>{formatTick(tick)}</div>
@@ -47,6 +51,7 @@
 <style>
 	.axis,
 	.tick,
+	.tick-mark,
 	.gridline,
 	.baseline,
 	.text {
@@ -64,6 +69,9 @@
 
 	.gridline {
 		border-top: 1px dashed #aaa;
+	}
+	.tick-mark {
+		border-top: 1px solid #aaa;
 	}
 
 	.baseline.gridline {
