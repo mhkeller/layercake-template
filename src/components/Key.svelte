@@ -66,7 +66,7 @@
 	}
 </style>
 
-<div class='key' style="justify-content: {align}">
+<div class='key' style="justify-content: {align === 'end' ? 'flex-end': align};">
 	{#each $zDomain as item}
 	<div class='key-item'>
 		<div
