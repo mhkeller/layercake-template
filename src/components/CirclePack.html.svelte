@@ -26,7 +26,7 @@
    * if there's no `parentKey`
    */
   let parent = {};
-  let dataset = $data;
+  $: dataset = $data;
 
   $: if (parentKey === undefined) {
     parent = { [idKey]: 'all' };
