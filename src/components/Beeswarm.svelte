@@ -62,7 +62,7 @@
 			stroke='{strokeColor}'
 			stroke-width='{strokeWidth}'
 			cx='{d.x}'
-			cy='{$height - $padding.bottom - r - spacing - strokeWidth / 2 - d.y}'
+			cy='{$height - r - spacing - strokeWidth / 2 - d.y}'
 			r='{r}'
 		>
 			<title>{$custom.getTitle(d)}</title>

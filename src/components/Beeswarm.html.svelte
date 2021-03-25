@@ -64,7 +64,7 @@
 				border-color:{strokeColor};
 				border-width:{strokeWidth};
 				left:{d.x}px;
-				top:{$height - $padding.bottom - r - spacing - strokeWidth / 2 - d.y}px;
+				top:{$height - r - spacing - strokeWidth / 2 - d.y}px;
 				width:{r * 2}px;
 				height:{r * 2}px;
 			"
