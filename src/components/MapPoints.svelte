@@ -4,19 +4,22 @@
 
 	const { data, width, height } = getContext('LayerCake');
 
-	export let projectionName = 'geoAlbersUsa';
+	/* --------------------------------------------
+	 * Require a D3 projection function
+	 */
+	export let projection;
 	export let pointsData = [];
 	export let r = 5;
 
-	$: projection = geo[projectionName]()
+	$: projectionFn = projection()
 		.fitSize([$width, $height], $data);
 </script>
 
 <g class="points">
 {#each pointsData as d}
 	<circle
-		cx={projection(d)[0]}
-		cy={projection(d)[1]}
+		cx={projectionFn(d)[0]}
+		cy={projectionFn(d)[1]}
 		r="{r}"
 	>
 	</circle>
