@@ -1,6 +1,7 @@
 {
   "name": "layercake-template",
   "version": "1.0.0",
+  "license": "MIT",
   "scripts": {
     "build": "rollup -c",
     "build:ssr": "rollup -c rollup.config-ssr.js",
