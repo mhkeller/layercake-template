@@ -15,7 +15,7 @@
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^6.0.0",
     "html-minifier": "^4.0.0",
-    "layercake": "^4.1.0",
+    "layercake": "^5.0.0",
     "rollup": "^2.38.5",
     "rollup-plugin-css-only": "^3.1.0",
     "rollup-plugin-execute": "^1.1.1",
