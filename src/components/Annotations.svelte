@@ -1,14 +1,7 @@
 <script>
-	import { setContext, onMount } from 'svelte';
-
 	const vals = ['top', 'right', 'bottom', 'left'];
 
-	export let container = undefined;
 	export let annotations = [];
-
-	onMount(() => {
-		setContext('annotation-els', Array.from(container.querySelectorAll('.layercake-annotation')));
-	});
 
 	$: fillStyle = d => {
 		let style = '';
@@ -21,7 +14,7 @@
 	};
 </script>
 
-<div class="layercake-annotations" bind:this={container}>
+<div class="layercake-annotations">
 	{#each annotations as d, i}
 		<div
 			class="layercake-annotation"
@@ -36,4 +29,3 @@
 		position: absolute;
 	}
 </style>
-

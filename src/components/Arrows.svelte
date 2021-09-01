@@ -5,6 +5,8 @@
 
 	export let annotations = [];
 
+	let container;
+
 	// If you're loading this component via sapper or another multi-page app
 	// you will likely need to set an explicit path to the svg marker definition
 	// for Safari compatibility. See https://github.com/sveltejs/svelte/issues/3450
@@ -25,13 +27,23 @@
 	let d = () => '';
 	let annotationEls;
 
+	// This searches the DOM for the HTML annotations
+	// in the Annotations.svelte componenent and then
+	// attaches arrows to those divs
+	// Make sure the `.chart-container` and `.layercake-annotation`
+	// selectors match what you have in your project
+	// otherwise it won't find anything
 	onMount(() => {
-		annotationEls = getContext('annotation-els');
+		annotationEls = Array.from(
+			container.closest('.chart-container')
+				.querySelectorAll('.layercake-annotation')
+		);
 	});
 
 	function setPath (w, h) {
 		return (anno, i, arrow) => {
 			const el = annotationEls[i];
+
 			/* --------------------------------------------
 			 * Parse our attachment directives to know where to start the arrowhead
 			 * measuring a bounding box based on our annotation el
@@ -68,7 +80,7 @@
 	$: if (annotationEls) d = setPath($width, $height);
 </script>
 
-
+<g bind:this={container}>
 {#if annotations.length}
 	<g class="swoops">
 		{#each annotations as anno, i}
@@ -82,6 +94,7 @@
 		{/each}
 	</g>
 {/if}
+</g>
 
 <style>
 	.swoops {
