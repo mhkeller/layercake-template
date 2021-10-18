@@ -35,7 +35,7 @@
 
 	$: fitSizeRange = fixedAspectRatio ? [100, 100 / fixedAspectRatio] : [$width, $height];
 
-	$: projectionFn = projection()
+	$: projectionFn = projection
 		.fitSize(fitSizeRange, $data);
 
 	$: geoPathFn = geoPath(projectionFn);
