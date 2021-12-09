@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 
-	import Line from './components/Line.svelte';
+	import Line from './components/Line-D3.svelte';
 	import Area from './components/Area.svelte';
 	import AxisX from './components/AxisX.svelte';
 	import AxisY from './components/AxisY.svelte';
