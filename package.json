@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "clean-css": "^4.2.3",
+    "d3-shape": "^3.0.1",
     "sirv-cli": "^0.4.4"
   }
 }
