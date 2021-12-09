@@ -25,4 +25,4 @@ const minifiedHtml = minify(data.html, htmlOptions);
 
 fs.writeFileSync(path.join(outDir, 'index.html'), minifiedHtml, 'utf-8');
 fs.writeFileSync(path.join(outDir, 'styles.css'), minifiedCss, 'utf-8');
-fs.writeFileSync(path.join(outDir, 'styles.css.map'), css.map, 'utf-8');
+// fs.writeFileSync(path.join(outDir, 'styles.css.map'), css.map, 'utf-8');
