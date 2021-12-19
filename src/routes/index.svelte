@@ -1,6 +1,3 @@
-<script context="module" lang="ts">
-	export const prerender = true;
-</script>
 
 <script>
 	import { LayerCake, Svg } from 'layercake';
