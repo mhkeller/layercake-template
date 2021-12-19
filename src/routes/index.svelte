@@ -1,4 +1,3 @@
-
 <script>
 	import { LayerCake, Svg } from 'layercake';
 
