@@ -1,38 +1,34 @@
-# create-svelte
+Layer Cake Example
+===
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte);
+This is a starter example for using [Layer Cake](https://layercake.graphics). It sets you up with the line and area chart as seen [in the examples](https://layercake.graphics/example/Line). 
 
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
+To create a new project based on this template using [degit](https://github.com/Rich-Harris/degit):
 
 ```bash
-# create a new project in the current directory
-npm init svelte@next
-
-# create a new project in my-app
-npm init svelte@next my-app
+npx degit mhkeller/layercake-template my-chart
+cd my-chart
 ```
 
-> Note: the `@next` is temporary
+*Note that you will need to have [Node.js](https://nodejs.org) installed.*
+
+## Get started
+
+Install the dependencies...
+
+```bash
+npm install
+npm run build && npm run preview
+```
+
+Your app will be running at [localhost:5000](http://localhost:5000).
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```bash
+```sh
+# if you didn't already install, run the install command
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
-
-Before creating a production version of your app, install an [adapter](https://kit.svelte.dev/docs#adapters) for your target environment. Then:
-
-```bash
-npm run build
-```
-
-> You can preview the built app with `npm run preview`, regardless of whether you installed an adapter. This should _not_ be used to serve your app in production.
+Your app will be running at [localhost:3000](http://localhost:3000).
