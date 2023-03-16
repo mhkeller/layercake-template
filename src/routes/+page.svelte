@@ -30,6 +30,7 @@
 		y={yKey}
 		yDomain={[0, null]}
 		data={points}
+		debug={true}
 	>
 		<Svg>
 			<AxisX/>
