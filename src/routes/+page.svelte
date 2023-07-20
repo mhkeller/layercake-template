@@ -11,7 +11,7 @@
 	const xKey = 'myX';
 	const yKey = 'myY';
 
-	points.forEach((row) => {
+	points.forEach((/** @type {{ [columnName: string]:  number; }} */ row) => {
 		row[yKey] = +row[yKey];
 	});
 </script>

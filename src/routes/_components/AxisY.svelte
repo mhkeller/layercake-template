@@ -1,6 +1,6 @@
 <script>
 	/**
-		Generates an HTML y-axis.
+		Generates an SVG y-axis.
 	*/
 
 	import { getContext } from 'svelte';
@@ -12,8 +12,8 @@
 	/** @type {Boolean} [tickMarks=false] - Show a vertical mark for each tick. */
 	export let tickMarks = false;
 	/**	@type {Function} [formatTick=d => d] - A function that passes the current tick value and expects a nicely formatted value in return. */
-	export let formatTick = (d) => d;
-	/**	@type {Number|Array|Function} [ticks=4] - If this is a number, it passes that along to the [d3Scale.ticks](https://github.com/d3/d3-scale) function. If this is an array, hardcodes the ticks to those values. If it's a function, passes along the default tick values and expects an array of tick values in return. */
+	export let formatTick = (/** @type {any} */ d) => d;
+	/**	@type {Number|Array<Number|String>|Function} [ticks=4] - If this is a number, it passes that along to the [d3Scale.ticks](https://github.com/d3/d3-scale) function. If this is an array, hardcodes the ticks to those values. If it's a function, passes along the default tick values and expects an array of tick values in return. */
 	export let ticks = 4;
 	/**	@type {Number} [xTick=0] - How far over to position the text marker. */
 	export let xTick = 0;

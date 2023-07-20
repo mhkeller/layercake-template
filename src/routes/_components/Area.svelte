@@ -12,11 +12,12 @@
 	$: path =
 		'M' +
 		$data
-			.map((d) => {
+			.map((/** @type {Number} */ d) => {
 				return $xGet(d) + ',' + $yGet(d);
 			})
 			.join('L');
 
+	/** @type {string}*/
 	let area;
 
 	$: {
