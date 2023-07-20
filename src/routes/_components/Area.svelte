@@ -1,23 +1,24 @@
+<!--
+	@component
+	Generates an SVG area shape using the `area` function from [d3-shape](https://github.com/d3/d3-shape).
+ -->
 <script>
-	/**
-		Generates an SVG area shape manually constructing the SVG path.
-		@type {String} [fill='#ab00d610'] - The shape's fill color. This is technically optional because it comes with a default value but you'll likely want to replace it with your own color.
-	*/
 	import { getContext } from 'svelte';
 
 	const { data, xGet, yGet, xScale, yScale, extents } = getContext('LayerCake');
 
+	/**	@type {String} [fill='#ab00d610'] The shape's fill color. This is technically optional because it comes with a default value but you'll likely want to replace it with your own color. */
 	export let fill = '#ab00d610';
 
 	$: path =
 		'M' +
 		$data
-			.map((/** @type {Number} */ d) => {
+			.map((/** @type {any} */ d) => {
 				return $xGet(d) + ',' + $yGet(d);
 			})
 			.join('L');
 
-	/** @type {string}*/
+	/**	@type {String} */
 	let area;
 
 	$: {
