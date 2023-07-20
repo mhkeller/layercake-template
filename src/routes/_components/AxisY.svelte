@@ -14,9 +14,9 @@
 	export let tickMarks = false;
 
 	/** @type {Function} [formatTick=d => d] - A function that passes the current tick value and expects a nicely formatted value in return. */
-	export let formatTick = d => d;
+	export let formatTick = (/** @type {any} */ d) => d;
 
-	/** @type {Number|Array|Function} [ticks=4] - If this is a number, it passes that along to the [d3Scale.ticks](https://github.com/d3/d3-scale) function. If this is an array, hardcodes the ticks to those values. If it's a function, passes along the default tick values and expects an array of tick values in return. */
+	/** @type {Number|Array<String|Number>|Function} [ticks=4] - If this is a number, it passes that along to the [d3Scale.ticks](https://github.com/d3/d3-scale) function. If this is an array, hardcodes the ticks to those values. If it's a function, passes along the default tick values and expects an array of tick values in return. */
 	export let ticks = 4;
 
 	/** @type {Number} [xTick=0] - How far over to position the text marker. */
@@ -36,48 +36,52 @@
 
 	$: isBandwidth = typeof $yScale.bandwidth === 'function';
 
-	$: tickVals = Array.isArray(ticks) ? ticks :
-		isBandwidth ?
-			$yScale.domain() :
-			typeof ticks === 'function' ?
-				ticks($yScale.ticks()) :
-					$yScale.ticks(ticks);
+	$: tickVals = Array.isArray(ticks)
+		? ticks
+		: isBandwidth
+		? $yScale.domain()
+		: typeof ticks === 'function'
+		? ticks($yScale.ticks())
+		: $yScale.ticks(ticks);
 </script>
 
-<g class='axis y-axis' transform='translate({-$padding.left}, 0)'>
+<g class="axis y-axis" transform="translate({-$padding.left}, 0)">
 	{#each tickVals as tick (tick)}
-		<g class='tick tick-{tick}' transform='translate({$xRange[0] + (isBandwidth ? $padding.left : 0)}, {$yScale(tick)})'>
+		<g
+			class="tick tick-{tick}"
+			transform="translate({$xRange[0] + (isBandwidth ? $padding.left : 0)}, {$yScale(tick)})"
+		>
 			{#if gridlines !== false}
 				<line
 					class="gridline"
-					x2='100%'
-					y1={(isBandwidth ? ($yScale.bandwidth() / 2) : 0)}
-					y2={(isBandwidth ? ($yScale.bandwidth() / 2) : 0)}
-				></line>
+					x2="100%"
+					y1={isBandwidth ? $yScale.bandwidth() / 2 : 0}
+					y2={isBandwidth ? $yScale.bandwidth() / 2 : 0}
+				/>
 			{/if}
 			{#if tickMarks === true}
 				<line
-					class='tick-mark'
-					x1='0'
-					x2='{isBandwidth ? -6 : 6}'
-					y1={(isBandwidth ? ($yScale.bandwidth() / 2) : 0)}
-					y2={(isBandwidth ? ($yScale.bandwidth() / 2) : 0)}
-				></line>
+					class="tick-mark"
+					x1="0"
+					x2={isBandwidth ? -6 : 6}
+					y1={isBandwidth ? $yScale.bandwidth() / 2 : 0}
+					y2={isBandwidth ? $yScale.bandwidth() / 2 : 0}
+				/>
 			{/if}
 			<text
-				x='{xTick}'
-				y='{(isBandwidth ? ($yScale.bandwidth() / 2) + yTick : yTick)}'
-				dx='{isBandwidth ? -9 : dxTick}'
-				dy='{isBandwidth ? 4 : dyTick}'
-				style="text-anchor:{isBandwidth ? 'end' : textAnchor};"
-			>{formatTick(tick)}</text>
+				x={xTick}
+				y={isBandwidth ? $yScale.bandwidth() / 2 + yTick : yTick}
+				dx={isBandwidth ? -9 : dxTick}
+				dy={isBandwidth ? 4 : dyTick}
+				style="text-anchor:{isBandwidth ? 'end' : textAnchor};">{formatTick(tick)}</text
+			>
 		</g>
 	{/each}
 </g>
 
 <style>
 	.tick {
-		font-size: .725em;
+		font-size: 0.725em;
 		font-weight: 200;
 	}
 
