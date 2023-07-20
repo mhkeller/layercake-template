@@ -10,7 +10,7 @@
 	/** @type {Boolean} [gridlines=true] - Extend lines from the ticks into the chart space */
 	let gridlines = true;
 	/** @type {Boolean} [tickMarks=false] - Show a vertical mark for each tick. */
-	export let tickMarks = true;
+	export let tickMarks = false;
 	/** @type {Boolean} [baseline=false] – Show a solid line at the bottom. */
 	export let baseline = false;
 	/** @type {Boolean} [snapTicks=false] - Instead of centering the text on the first and the last items, align them to the edges of the chart. */
