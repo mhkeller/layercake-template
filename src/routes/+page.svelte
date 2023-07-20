@@ -35,7 +35,8 @@
 
 <style>
 	.chart-container {
-		width: 100%;
-		height: 100vh;
+		width: 80%;
+		height: 80vh;
+		margin: auto;
 	}
 </style>
