@@ -11,17 +11,10 @@
 	const xKey = 'myX';
 	const yKey = 'myY';
 
-	points.forEach(row => {
+	points.forEach((/** @type {{ [columnName: string]:  number; }} */ row) => {
 		row[yKey] = +row[yKey];
 	});
 </script>
-
-<style>
-	.chart-container {
-		width: 100%;
-		height: 100vh;
-	}
-</style>
 
 <div class="chart-container">
 	<LayerCake
@@ -33,10 +26,18 @@
 		debug={true}
 	>
 		<Svg>
-			<AxisX/>
-			<AxisY/>
-			<Line/>
-			<Area/>
+			<AxisX />
+			<AxisY />
+			<Line />
+			<Area />
 		</Svg>
 	</LayerCake>
 </div>
+
+<style>
+	.chart-container {
+		width: 80%;
+		height: 80vh;
+		margin: auto;
+	}
+</style>
