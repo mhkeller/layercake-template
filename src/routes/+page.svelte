@@ -38,6 +38,6 @@
 	.chart-container {
 		width: 80%;
 		height: 80vh;
-		margin: auto;
+		margin: 25px auto;
 	}
 </style>
