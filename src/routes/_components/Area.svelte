@@ -1,29 +1,33 @@
 <!--
 	@component
-	Generates an SVG area shape using the `area` function from [d3-shape](https://github.com/d3/d3-shape).
+	Generates an SVG area shape.
  -->
 <script>
 	import { getContext } from 'svelte';
 
 	const { data, xGet, yGet, xScale, yScale, extents } = getContext('LayerCake');
 
-	/**	@type {String} [fill='#ab00d610'] The shape's fill color. This is technically optional because it comes with a default value but you'll likely want to replace it with your own color. */
-	export let fill = '#ab00d610';
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [fill='#ab00d610'] - The shape's fill color. This is technically optional because it comes with a default value but you'll likely want to replace it with your own color.
+	 */
 
-	$: path =
+	/** @type {Props} */
+	let { fill = '#ab00d610' } = $props();
+
+	let path = $derived(
 		'M' +
-		$data
-			.map((/** @type {any} */ d) => {
-				return $xGet(d) + ',' + $yGet(d);
-			})
-			.join('L');
+			$data
+				.map((/** @type {object} */ d) => {
+					return $xGet(d) + ',' + $yGet(d);
+				})
+				.join('L')
+	);
 
-	/**	@type {String} */
-	let area;
-
-	$: {
+	/**	@type {string} **/
+	let area = $derived.by(() => {
 		const yRange = $yScale.range();
-		area =
+		return (
 			path +
 			('L' +
 				$xScale($extents.x ? $extents.x[1] : 0) +
@@ -33,8 +37,9 @@
 				$xScale($extents.x ? $extents.x[0] : 0) +
 				',' +
 				yRange[0] +
-				'Z');
-	}
+				'Z')
+		);
+	});
 </script>
 
-<path class="path-area" d={area} {fill} />
+<path class="path-area" d={area} {fill}></path>

@@ -1,4 +1,4 @@
-// See https://kit.svelte.dev/docs/types#app
+// See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 declare global {
 	namespace App {
@@ -8,7 +8,10 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
-	module '*.csv';
+	module '*.csv' {
+		const data: { [key: string]: any }[];
+		export default data;
+	}
 }
 
 export {};
