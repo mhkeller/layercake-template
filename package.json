@@ -12,15 +12,15 @@
 		"format": "prettier --write ."
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-auto": "^7.0.0",
-		"@sveltejs/kit": "^2.69.2",
-		"@sveltejs/vite-plugin-svelte": "^7.2.0",
-		"prettier": "^3.8.1",
-		"prettier-plugin-svelte": "^3.5.1",
-		"svelte": "^5.56.4",
-		"svelte-check": "^4.3.6",
+		"@sveltejs/adapter-auto": "^7.0.1",
+		"@sveltejs/kit": "^2.70.3",
+		"@sveltejs/vite-plugin-svelte": "^7.3.0",
+		"prettier": "^3.9.6",
+		"prettier-plugin-svelte": "^3.5.2",
+		"svelte": "^5.57.0",
+		"svelte-check": "^4.7.6",
 		"typescript": "^5.9.3",
-		"vite": "^8.1.4"
+		"vite": "^8.2.2"
 	},
 	"type": "module",
 	"dependencies": {
