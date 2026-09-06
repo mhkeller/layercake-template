@@ -1,15 +1,15 @@
 <!--
-	@component
-	Generates an SVG area shape.
+  @component
+  Generates an SVG area shape.
  -->
 <script>
-	import { getContext } from 'svelte';
+	import { getLayerCakeContext } from 'layercake';
 
-	const { data, xGet, yGet, xScale, yScale, extents } = getContext('LayerCake');
+	const k = getLayerCakeContext();
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {string} [fill='#ab00d610'] - The shape's fill color. This is technically optional because it comes with a default value but you'll likely want to replace it with your own color.
+	 * @property {string} [fill='#ab00d610'] - The shape's fill color.
 	 */
 
 	/** @type {Props} */
@@ -17,24 +17,25 @@
 
 	let path = $derived(
 		'M' +
-			$data
-				.map((/** @type {object} */ d) => {
-					return $xGet(d) + ',' + $yGet(d);
+			k.data
+				.map(d => {
+					return k.xGet(d) + ',' + k.yGet(d);
 				})
 				.join('L')
 	);
 
-	/**	@type {string} **/
+	// Close the line along the bottom of the chart to make the area
+	/** @type {string} */
 	let area = $derived.by(() => {
-		const yRange = $yScale.range();
+		const yRange = k.yScale.range();
 		return (
 			path +
 			('L' +
-				$xScale($extents.x ? $extents.x[1] : 0) +
+				k.xScale(k.extents.x ? k.extents.x[1] : 0) +
 				',' +
 				yRange[0] +
 				'L' +
-				$xScale($extents.x ? $extents.x[0] : 0) +
+				k.xScale(k.extents.x ? k.extents.x[0] : 0) +
 				',' +
 				yRange[0] +
 				'Z')
